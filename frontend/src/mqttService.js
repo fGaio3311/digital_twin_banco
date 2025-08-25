@@ -18,8 +18,10 @@ export function subscribe(topic, handler) {
       try {
         handler(JSON.parse(payload.toString()));
       } catch (e) {
-        console.error('payload inválido', e);
+        console.error('Payload inválido', e);
       }
     }
   });
 }
+
+export default client;

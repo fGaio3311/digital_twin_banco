@@ -1,6 +1,6 @@
 // src/components/LoginForm.jsx
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../api'
 
 export default function LoginForm({ onLogin }) {
   const [username, setUsername] = useState('')
@@ -11,13 +11,12 @@ export default function LoginForm({ onLogin }) {
     e.preventDefault()
 
     try {
-      // monta o body como form-urlencoded
       const params = new URLSearchParams()
       params.append('username', username)
       params.append('password', password)
 
-      const res = await axios.post(
-        'http://localhost:8000/token',
+      const res = await api.post(
+        '/token',
         params,
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       )

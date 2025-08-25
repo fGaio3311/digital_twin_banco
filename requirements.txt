@@ -8,3 +8,6 @@ requests
 paho-mqtt
 psycopg2-binary
 python-multipart
+PyJWT>=2.0.0
+psutil
+prometheus-client

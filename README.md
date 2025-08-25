@@ -1,180 +1,339 @@
-📄 Documentação: tests/test_api.py
-📌 Objetivo
+# Bank Simulator with Digital Twin – README
 
-Este script implementa testes automatizados para uma API bancária baseada em FastAPI. Os testes cobrem:
+> **Stack principal**: FastAPI · SQLAlchemy · PostgreSQL · MQTT (Eclipse Mosquitto) · Digital Twin (Python) · Typer CLI · Pytest
 
-    Funcionalidades básicas (registro, login, saldo, depósito, PIX, logs)
+## 📑 Sumário
 
-    Testes de segurança e vulnerabilidades comuns, como:
+1. [Visão Geral](#visão-geral)
+2. [Arquitetura](#arquitetura)
+3. [Requisitos](#requisitos)
+4. [.env de Exemplo](#env-de-exemplo)
+5. [Instalação e Execução](#instalação-e-execução)
 
-        Injeção de SQL
+   * [Docker Compose](#docker-compose)
+   * [Execução Local (sem Docker)](#execução-local-sem-docker)
+6. [CLI (Typer)](#cli-typer)
+7. [Endpoints Principais da API](#endpoints-principais-da-api)
+8. [Digital Twin – Funcionalidades](#digital-twin--funcionalidades)
+9. [Testes Automatizados](#testes-automatizados)
 
-        Autenticação quebrada
+   * [Estrutura dos Testes](#estrutura-dos-testes)
+   * [Cobertura OWASP](#cobertura-owasp)
+   * [Como rodar](#como-rodar)
+10. [Smoke Test Script](#smoke-test-script)
+11. [Próximos Passos / Roadmap](#próximos-passos--roadmap)
+12. [Licença](#licença)
 
-        Atribuição indevida de atributos
+---
 
-        Uso excessivo de recursos
+## Visão Geral
 
-        Falta de monitoramento/logs
+Aplicação bancária mínima com **Digital Twin** acoplado. Cada evento (login, depósito, PIX, consulta de saldo) é:
 
-⚙️ Setup e Fixtures
-🔧 Banco de Testes com SQLite
+* Persistido em banco (PostgreSQL)
+* Logado para auditoria
+* Publicado em tópico MQTT
+* Reproduzido no gêmeo digital (sombra, sazonalidade, estatísticas)
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+Frontend web **foi descontinuado** nesta entrega; o foco é em **API + CLI** e nos requisitos de negócio do twin.
 
-Usa SQLite em memória para testes rápidos e isolados, sem afetar o banco real.
-🔁 client Fixture
+---
 
-@pytest.fixture(scope="module")
-def client():
+## Arquitetura
 
-Cria um cliente de teste com TestClient, usando uma versão sobrescrita de get_db() para conectar ao banco de testes.
-✅ Testes de Funcionalidades Básicas
-🔐 test_register_and_login
+```
++------------------------+
+|        CLI (Typer)     |
+|  -> chama API REST     |
++-----------+------------+
+            |
+            v
++------------------------+        +----------------------+
+|        FastAPI         |  --->  |  MQTT Broker (Mosq.) |
+|  Auth, Transações,     |        +----------+-----------+
+|  Logs, Endpoints Twin  |                   |
++-----------+------------+                   v
+            |                           +----------+
+            v                           |Subscriber|
++------------------------+              |(mqtt_sub)|
+| PostgreSQL (Transações)|              +----------+
++------------------------+
+```
 
-Testa:
+* **FastAPI**: API REST com autenticação JWT.
+* **DigitalTwin**: classe Python que mantém sombra/estatísticas e pode exportar/importar eventos.
+* **MQTT**: eventos publicados no tópico `banco/<user>/events`.
+* **mqtt\_subscriber.py**: consome eventos e aplica no twin (quando executado como serviço).
+* **CLI (Typer)**: interface de linha de comando para registrar/logar/operar e consultar twin.
 
-    Registro de usuário com /register
+---
 
-    Login com /login
+## Requisitos
 
-    Verifica se o token de autenticação é retornado
+* Docker & Docker Compose (para execução conteinerizada)
+* Python 3.11+ (para rodar local/CLI/tests)
 
-💰 test_balance_deposit_and_pix_and_logs
+Bibliotecas principais (requirements.txt):
 
-Testa:
+* fastapi, uvicorn
+* sqlalchemy, psycopg2-binary
+* pydantic-settings
+* paho-mqtt
+* typer, requests
+* pytest, httpx
 
-    Consulta de saldo inicial
+---
 
-    Depósito de valor
+## .env de Exemplo
 
-    Transferência via PIX
+Crie um `.env` na raiz:
 
-    Registro de ações no log
+```dotenv
+# DB
+DATABASE_URL=postgresql+psycopg2://twin:twin@postgres-twin:5432/twin
+DB_POOL_SIZE=20
+DB_MAX_OVERFLOW=30
+DB_POOL_TIMEOUT=30
 
-Assegura que todas essas ações sejam registradas corretamente.
-🔐 Testes de Segurança (Vulnerabilidades OWASP)
+# Auth
+SECRET_KEY=supersecretkey
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-🛡️ test_sql_injection_login
+# MQTT
+MQTT_BROKER_HOST=mqtt-broker
+MQTT_BROKER_PORT=1883
 
-Simula injeção SQL no login com:
+# CORS (se usar outro cliente)
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
-{"username": "' OR 1=1 --", "password": "x"}
+# Opcional
+REACT_APP_API_URL=http://localhost:8000
+```
 
-Valida que o sistema rejeita com status 401 (não autorizado).
-🚪 test_broken_authentication_bruteforce
+> **Nota**: O serviço `mqtt-subscriber` precisa somente de `MQTT_*`. Deixamos os demais campos como opcionais no `Settings` para não quebrar.
 
-Tenta força bruta com várias senhas erradas. Espera que o sistema continue retornando 401 sem bloquear ou limitar requisições (o que seria uma falha de segurança).
+---
 
-🔓 test_broken_object_level_authorization
+## Instalação e Execução
 
-Testa se um usuário pode acessar dados de outro (/balance/2). Espera-se 401 ou 403, para impedir acesso não autorizado.
+### Docker Compose
 
-🧬 test_mass_assignment_on_register
+1. **Subir tudo**
 
-Tenta manipular atributos protegidos (como balance) durante o registro:
+   ```bash
+   docker compose build --no-cache
+   docker compose up -d
+   ```
+2. **Ver logs**
 
-{"username": "eve", "password": "senha789", "balance": 1000000}
+   ```bash
+   docker compose logs -f api mqtt-subscriber
+   ```
+3. **Testar API**
 
-Espera que o saldo real de eve seja 0, evitando mass assignment.
+   ```bash
+   curl http://localhost:8000/health
+   ```
 
-⚠️ test_unrestricted_resource_consumption
+### Execução Local (sem Docker)
 
-Simula um depósito com valor extremamente alto:
+1. Crie e ative um virtualenv
 
-big_amount = 10**18
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+2. Suba o Postgres e Mosquitto localmente ou use Docker só para eles.
+3. Execute API:
 
-Espera que o sistema trate com erro (400) ou aceite com controle.
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+4. Execute o subscriber (opcional):
 
-📋 test_insufficient_logging_and_monitoring
+   ```bash
+   python mqtt_subscriber.py
+   ```
 
-🔒 **Testes de Segurança Adicionais (OWASP Expandido)**
+---
 
-➕ **test_negative_or_zero_amount**
-Verifica rejeição de valores inválidos em transações:
-- Depósitos com valores negativos ou zero devem retornar 400
-- Mensagens de erro claras ("Valor deve ser positivo")
+## CLI (Typer)
 
-💸 **test_insufficient_balance_pix**
-Valida tratamento de saldo insuficiente em transferências PIX:
-- Bloqueia transferências acima do saldo disponível
-- Mensagem "Saldo insuficiente" e status 400
+Arquivo: `cli.py`
 
-🔑 **test_jwt_tampering**
-Testa integridade de tokens JWT:
-- Modificação maliciosa do payload (ex: alterar username)
-- Sistema deve rejeitar tokens adulterados (401/403)
+Instalação das dependências (se não estiver em Docker):
 
-🤐 **test_login_error_leakage**
-Previne vazamento de informações sensíveis:
-- Mensagens de erro genéricas para login inválido
-- Não revela se usuário existe ou não
+```bash
+pip install typer[all] requests
+```
 
-⚡ **test_concurrent_deposits**
-Detecta race conditions em operações concorrentes:
-- 10 depósitos simultâneos de 1 unidade
-- Saldo final deve ser exatamente 10
+Exemplos:
 
-🛑 **test_rate_limiting_login**
-Protege contra força bruta:
-- Bloqueia após 5 tentativas falhas (status 429)
-- Implementa rate limiting básico
+```bash
+# Registrar e logar
+python cli.py register user pass
+python cli.py login --user user --pass pass
 
-🔐 **test_password_hashing**
-Garante armazenamento seguro de senhas:
-- Verifica se senhas estão hasheadas no banco
-- Hash não corresponde ao texto original
+# Operações bancárias
+python cli.py deposit 100
+python cli.py balance
+python cli.py pix --to-user maria --amount 25
+python cli.py logs
 
-🛡️ **test_xss_in_username**
-Previne Cross-Site Scripting:
-- Bloqueia registro com payloads HTML/JS no username
-- Sanitiza outputs nos logs
+# Digital Twin
+python cli.py twin_summary
+python cli.py twin_stats
+python cli.py twin_sazonalidade
+python cli.py twin_shadow user
+```
 
-🔄 **test_concurrent_deposits**
-Teste de concorrência:
-- Simula múltiplas transações paralelas
-- Verifica consistência do saldo final
+O token JWT fica em `.token` na raiz.
 
-🔍 **test_insufficient_logging_and_monitoring (Expandido)**
-Valida:
-- Logs de todas as operações sensíveis
-- Rastreabilidade completa das transações
-- Detalhes suficientes para auditoria
+---
 
-📊 **Estrutura dos Testes Atualizada**
+## Endpoints Principais da API
 
-| Categoria OWASP           | Testes Correspondentes                          |
-|---------------------------|-------------------------------------------------|
-| Validação de Entrada       | negative_or_zero_amount, non_numeric_amount     |
-| Controle de Acesso         | broken_object_auth, jwt_tampering               |
-| Gestão de Autenticação     | rate_limiting, password_hashing                 |
-| Lógica de Negócio          | insufficient_balance_pix, concurrent_deposits   |
-| Segurança de Dados         | xss_in_username, sql_injection_login            |
-| Resiliência                | unrestricted_resource_consumption               |
+| Método | Rota                          | Autenticação | Descrição                           |
+| ------ | ----------------------------- | ------------ | ----------------------------------- |
+| GET    | `/health`                     | -            | Healthcheck                         |
+| GET    | `/ping`                       | -            | Ping simples                        |
+| POST   | `/register`                   | -            | Cria usuário                        |
+| POST   | `/token`                      | -            | Login (OAuth2PasswordRequestForm)   |
+| GET    | `/balance`                    | Bearer JWT   | Retorna saldo                       |
+| POST   | `/deposit`                    | Bearer JWT   | Deposita valor                      |
+| POST   | `/pix`                        | Bearer JWT   | Transfere via PIX                   |
+| GET    | `/logs`                       | Bearer JWT   | Logs do usuário                     |
+| GET    | `/digital-twin/summary`       | -            | Resumo do twin                      |
+| GET    | `/digital-twin/stats`         | -            | Estatísticas                        |
+| GET    | `/digital-twin/sazonalidade`  | -            | Sazonalidade                        |
+| GET    | `/digital-twin/shadow/{user}` | -            | Sombra de um usuário                |
+| POST   | `/digital-twin/export`        | -            | Exporta logs para arquivo (async)   |
+| POST   | `/digital-twin/load`          | -            | Carrega logs do arquivo para o twin |
 
-📌 **Observações Finais (Atualizadas)**
+> Documentação Swagger: `http://localhost:8000/docs`
 
-1. **Cobertura Ampliada**
-   - 85% das vulnerabilidades OWASP Top 10 2023 cobertas
-   - Foco em cenários realistas de ataques modernos
+---
 
-2. **Técnicas Avançadas**
-   - Testes de concorrência com threading
-   - Simulação de token JWT adulterado
-   - Verificação de sanitização de inputs/outputs
+## Digital Twin – Funcionalidades
 
-3. **Próximos Passos**
-   ```python
-   # Exemplo de expansão futura
-   def test_mfa_bypass():
-       # Testar bypass de autenticação multi-fator
-       pass
+* **apply\_event(ev)**: Recebe eventos e atualiza estrutura interna.
+* **summary()**: Retorna visão geral dos usuários/eventos.
+* **stats()**: Estatísticas agregadas (quantidade, totais, médias, etc.).
+* **sazonalidade()**: Distribuição temporal de eventos (ex.: por mês/dia/hora).
+* **get\_shadow(username)**: Retorna o shadow (estado) de um usuário específico.
+* **export\_events(username=None)**: Exporta JSON de eventos (todos ou filtrados).
+* **load\_twin(path)**: Recarrega eventos de um arquivo e reconstrói o twin.
 
-Verifica se uma ação (como consultar saldo) é registrada nos logs. Exige que logs estejam funcionando como forma de monitoramento.
-📎 Observações Finais
+---
 
-    Os testes usam uma abordagem black-box e simulam o comportamento real do usuário.
+## Testes Automatizados
 
-    Cobrem tanto funcionalidade esperada quanto possíveis ataques/explorações.
+Arquivo principal: `tests/test_api.py`
 
-    A estrutura pode ser expandida para incluir testes de performance, autenticação multi-fator, verificação de tempo de resposta etc.
+### Setup
+
+* DB de testes: `sqlite:///:memory:` para isolamento e velocidade.
+* Fixture `client` sobrescreve `get_db()` para usar o banco em memória.
+
+### Estrutura dos Testes
+
+**Funcionais:**
+
+* `test_register_and_login`
+* `test_balance_deposit_and_pix_and_logs`
+
+**Segurança (OWASP Top 10):**
+
+* `test_sql_injection_login`
+* `test_broken_authentication_bruteforce`
+* `test_broken_object_level_authorization`
+* `test_mass_assignment_on_register`
+* `test_unrestricted_resource_consumption`
+* `test_insufficient_logging_and_monitoring`
+
+**Adicionais (Expandido):**
+
+* `test_negative_or_zero_amount`
+* `test_insufficient_balance_pix`
+* `test_jwt_tampering`
+* `test_login_error_leakage`
+* `test_concurrent_deposits`
+* `test_rate_limiting_login`
+* `test_password_hashing`
+* `test_xss_in_username`
+
+### Cobertura OWASP
+
+| Categoria OWASP        | Testes Correspondentes                                    |
+| ---------------------- | --------------------------------------------------------- |
+| Validação de Entrada   | negative\_or\_zero\_amount, sql\_injection\_login         |
+| Controle de Acesso     | broken\_object\_level\_authorization, jwt\_tampering      |
+| Gestão de Autenticação | broken\_authentication\_bruteforce, rate\_limiting\_login |
+| Lógica de Negócio      | insufficient\_balance\_pix, concurrent\_deposits          |
+| Segurança de Dados     | password\_hashing, xss\_in\_username                      |
+| Resiliência / Recursos | unrestricted\_resource\_consumption                       |
+| Monitoramento/Logs     | insufficient\_logging\_and\_monitoring                    |
+
+### Como rodar
+
+```bash
+# Ambiente de dev (venv + deps instaladas)
+pytest -vv
+
+# Ou no Docker (se tiver alvo de test dentro da imagem)
+docker compose run --rm api pytest -vv
+```
+
+> **Dica**: para testes de concorrência, habilite logging detalhado ou uso de `-s` para ver prints.
+
+---
+
+## Smoke Test Script
+
+Arquivo: `scripts/smoke.sh`
+
+```bash
+#!/usr/bin/env bash
+set -e
+API=${1:-http://localhost:8000}
+
+echo "[*] ping"
+curl -s $API/ping | jq
+
+echo "[*] register"
+curl -s -X POST $API/register -H "Content-Type: application/json" \
+    -d '{"username":"smoke","password":"smoke"}' | jq
+
+echo "[*] login"
+TOKEN=$(curl -s -X POST $API/token -d "username=smoke&password=smoke" | jq -r .access_token)
+echo "TOKEN=$TOKEN"
+
+echo "[*] balance"
+curl -s $API/balance -H "Authorization: Bearer $TOKEN" | jq
+```
+
+Permissão de execução: `chmod +x scripts/smoke.sh`.
+
+---
+
+## Próximos Passos / Roadmap
+
+* ✅ Substituir front web por CLI (feito)
+* 🔒 Implementar rate limiting real (Redis ou SlowAPI)
+* 🔑 MFA / 2FA em login
+* 📈 Métricas de performance (Prometheus/Grafana)
+* 🧪 Testes de performance/load (Locust/k6)
+* 📊 Visualizações de sazonalidade (ASCII charts ou export para CSV)
+* 🔐 Criptografia de dados sensíveis em repouso
+
+---
+
+## Licença
+
+Definir a licença (MIT, Apache 2.0, etc.) conforme necessidades do projeto.
+
+---
+
+> **Contato / Contribuição**: Abra issues/PRs ou entre em contato com o responsável pelo projeto.

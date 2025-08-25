@@ -1,11 +1,11 @@
-version: '3.8'
-
 services:
   api:
     build: .
     container_name: digital-twin-api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
       - MQTT_BROKER_HOST=mqtt-broker
       - MQTT_BROKER_PORT=1883
@@ -13,22 +13,11 @@ services:
       - postgres-twin
       - mqtt-broker
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: digital-twin-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - api
-
   mqtt-broker:
     image: eclipse-mosquitto:2.0
     container_name: mqtt-broker
     ports:
-      - "1883:1883"  # acesso entre containers
-      - "9001:9001"
+      - "1883:1883"
     volumes:
       - ./config:/mosquitto/config:ro
       - mosquitto_data:/mosquitto/data
@@ -38,8 +27,10 @@ services:
     build: .
     container_name: mqtt-subscriber
     command: python mqtt_subscriber.py
+    env_file: .env
     environment:
       - MQTT_BROKER_HOST=mqtt-broker
+      - MQTT_BROKER_PORT=1883
     depends_on:
       - mqtt-broker
 

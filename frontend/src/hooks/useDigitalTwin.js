@@ -1,18 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../api';
+import { useEffect, useState } from 'react';
+import { mqttService } from '../mqtt';
 
 export function useDigitalTwin() {
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [balance, setBalance] = useState(null);
+  const [lastOperation, setLastOperation] = useState(null);
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    const { data } = await api.get('/digital-twin/summary');
-    setSummary(data);
-    setLoading(false);
+  useEffect(() => {
+    // Conecta ao MQTT ao montar
+    mqttService.connect();
+
+    // Subscribe aos tópicos relevantes
+    const balanceHandler = (data) => {
+      setBalance(data.balance);
+      setLastOperation(data);
+    };
+
+    mqttService.subscribe('digital_twin/balance', balanceHandler);
+    mqttService.subscribe('digital_twin/operation', balanceHandler);
+
+    return () => {
+      mqttService.unsubscribe('digital_twin/balance', balanceHandler);
+      mqttService.unsubscribe('digital_twin/operation', balanceHandler);
+    };
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
-
-  return { summary, loading, refetch: fetch };
+  return { balance, lastOperation };
 }

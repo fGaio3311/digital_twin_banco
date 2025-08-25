@@ -1,0 +1,469 @@
+Run started:2025-07-23 19:10:46.471344
+
+Test results:
+>> Issue: [B112:try_except_continue] Try, Except, Continue detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b112_try_except_continue.html
+   Location: .\anomaly.py:27:8
+26	            dt = datetime.fromisoformat(ts)
+27	        except Exception:
+28	            continue
+29
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:36:8
+35	def twin_sazonalidade_chart(api: str = API_URL_DEFAULT):
+36	    r = requests.get(f"{api}/digital-twin/sazonalidade")
+37	    data = r.json()
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:48:8
+47	def ping(api: str = API_URL_DEFAULT):
+48	    r = requests.get(f"{api}/ping")
+49	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:55:8
+54	    data = {"username": user, "password": password}
+55	    r = requests.post(f"{api}/token", data=data)
+56	    if r.status_code != 200:
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:65:8
+64	def register(username: str, password: str, api: str = API_URL_DEFAULT):
+65	    r = requests.post(f"{api}/register", json={"username": username, "password": password})
+66	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:71:8
+70	def balance(api: str = API_URL_DEFAULT):
+71	    r = requests.get(f"{api}/balance", headers=_auth_header())
+72	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:77:8
+76	def deposit(amount: float, api: str = API_URL_DEFAULT):
+77	    r = requests.post(f"{api}/deposit", json={"amount": amount}, headers=_auth_header())
+78	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:83:8
+82	def pix(to_user: str, amount: float, api: str = API_URL_DEFAULT):
+83	    r = requests.post(f"{api}/pix", json={"to_user": to_user, "amount": amount}, headers=_auth_header())
+84	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:89:8
+88	def get_logs(api: str = API_URL_DEFAULT):
+89	    r = requests.get(f"{api}/logs", headers=_auth_header())
+90	    typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:96:8
+95	def twin_summary(api: str = API_URL_DEFAULT):
+96	    r = requests.get(f"{api}/digital-twin/summary")
+97	    typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:102:8
+101	def twin_stats(api: str = API_URL_DEFAULT):
+102	    r = requests.get(f"{api}/digital-twin/stats")
+103	    typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:108:8
+107	def twin_sazonalidade(api: str = API_URL_DEFAULT):
+108	    r = requests.get(f"{api}/digital-twin/sazonalidade")
+109	    typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:114:8
+113	def twin_shadow(username: str, api: str = API_URL_DEFAULT):
+114	    r = requests.get(f"{api}/digital-twin/shadow/{username}")
+115	    typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:120:8
+119	def export_logs(api_base_url: str, token: str, path: str, api: str = API_URL_DEFAULT):
+120	    r = requests.post(f"{api}/digital-twin/export", json={"api_base_url": api_base_url, "token": token, "path": path})
+121	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: .\cli.py:126:8
+125	def load_logs(path: str, api: str = API_URL_DEFAULT):
+126	    r = requests.post(f"{api}/digital-twin/load", json={"path": path})
+127	    typer.echo(r.json())
+
+--------------------------------------------------
+>> Issue: [B104:hardcoded_bind_all_interfaces] Possible binding to all interfaces.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-605 (https://cwe.mitre.org/data/definitions/605.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b104_hardcoded_bind_all_interfaces.html
+   Location: .\main.py:356:33
+355	    import uvicorn
+356	    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+--------------------------------------------------
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password: 'test-secret'
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b105_hardcoded_password_string.html
+   Location: .\tests/conftest.py:5:11
+4	os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+5	os.environ["SECRET_KEY"] = "test-secret"
+6
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:7:4
+6	    r = client.post("/register", json={"username": "alice", "password": "pw"})
+7	    assert r.status_code == 200
+8
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:10:4
+9	    r = client.post("/token", data={"username": "alice", "password": "pw"})
+10	    assert r.status_code == 200
+11	    data = r.json()
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:12:4
+11	    data = r.json()
+12	    assert "access_token" in data
+13	    assert data["token_type"] == "bearer"
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:13:4
+12	    assert "access_token" in data
+13	    assert data["token_type"] == "bearer"
+14
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:26:4
+25	    r = client.get("/balance", headers={"Authorization": f"Bearer {tok_a}"})
+26	    assert r.status_code == 200
+27	    assert r.json()["balance"] == 0
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:27:4
+26	    assert r.status_code == 200
+27	    assert r.json()["balance"] == 0
+28
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:31:4
+30	    r = client.post("/deposit", json={"amount": 100}, headers={"Authorization": f"Bearer {tok_a}"})
+31	    assert r.status_code == 200
+32	    assert r.json()["balance"] == 100
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:32:4
+31	    assert r.status_code == 200
+32	    assert r.json()["balance"] == 100
+33
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:36:4
+35	    r = client.post("/pix", json={"to_user": "bob", "amount": 40}, headers={"Authorization": f"Bearer {tok_a}"})
+36	    assert r.status_code == 200
+37	    assert r.json()["balance"] == 60
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:37:4
+36	    assert r.status_code == 200
+37	    assert r.json()["balance"] == 60
+38
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:41:4
+40	    r = client.get("/balance", headers={"Authorization": f"Bearer {tok_b}"})
+41	    assert r.json()["balance"] == 40
+42
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:45:4
+44	    r = client.get("/logs", headers={"Authorization": f"Bearer {tok_a}"})
+45	    assert r.status_code == 200
+46	    logs = r.json()
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_api_basic.py:47:4
+46	    logs = r.json()
+47	    assert any(l["action"] == "balance" for l in logs)
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:14:12
+13	        for f in futs:
+14	            assert f.result().status_code == 200
+15
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:17:4
+16	    r = client.get("/balance", headers={"Authorization": f"Bearer {tok}"})
+17	    assert r.json()["balance"] == 10
+18
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:30:4
+29	    r = client.get("/digital-twin/summary")
+30	    assert r.status_code == 200
+31	    assert "twin" in r.json()
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:31:4
+30	    assert r.status_code == 200
+31	    assert "twin" in r.json()
+32
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:35:4
+34	    r = client.get("/digital-twin/sazonalidade")
+35	    assert r.status_code == 200
+36	    data = r.json()
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:37:4
+36	    data = r.json()
+37	    assert "by_hour" in data
+38
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_concurrency.py:41:4
+40	    ar = client.get("/digital-twin/anomalies")
+41	    assert ar.status_code == 200
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:9:4
+8	    r = client.post("/token", data={"username": "' OR 1=1 --", "password": "x"})
+9	    assert r.status_code == 401
+10
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:17:4
+16	    r = client.post("/deposit", json={"amount": -10}, headers={"Authorization": f"Bearer {tok}"})
+17	    assert r.status_code == 422 or r.status_code == 400  # depends on validation choices
+18
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:20:4
+19	    r = client.post("/pix", json={"to_user": "neg", "amount": 0}, headers={"Authorization": f"Bearer {tok}"})
+20	    assert r.status_code == 400
+21
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:31:4
+30	    r = client.get("/balance", headers={"Authorization": f"Bearer {tampered}"})
+31	    assert r.status_code == 401
+32
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:39:4
+38	    r = client.get("/balance", headers={"Authorization": f"Bearer {tok}"})
+39	    assert r.json()["balance"] == 0
+40
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:46:4
+45	        r = client.post("/token", data={"username": "nobody", "password": "x"})
+46	    assert r.status_code in (401, 429)
+47
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b101_assert_used.html
+   Location: .\tests/test_security.py:55:4
+54	    r = client.get("/balance", headers={"Authorization": f"Bearer {tok}"})
+55	    assert r.status_code == 200
+
+--------------------------------------------------
+>> Issue: [B112:try_except_continue] Try, Except, Continue detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b112_try_except_continue.html
+   Location: .\twin.py:186:12
+185	                dt = _to_dt(ts)
+186	            except Exception:
+187	                continue
+188	            by_hour[dt.hour] += 1
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 819
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 30
+		Medium: 15
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 14
+		Medium: 2
+		High: 29
+Files skipped (0):

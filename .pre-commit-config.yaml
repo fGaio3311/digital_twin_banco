@@ -22,3 +22,13 @@ repos:
     hooks:
       - id: bandit
         args: ["-f", "txt", "-o", "bandit_output.txt", "--quiet"]
+
+  - repo: local
+    hooks:
+      - id: send-precommit-log
+        name: Send pre-commit log to Digital Twin
+        entry: python send_precommit_log.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]

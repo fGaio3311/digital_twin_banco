@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export function useTransactions() {
   const [error, setError] = useState(null);
@@ -8,11 +8,9 @@ export function useTransactions() {
     async (amount) => {
       setError(null);
       try {
-        const token = localStorage.getItem('token');
-        const resp = await axios.post(
+        const resp = await api.post(
           '/deposit',
-          { amount },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { amount }
         );
         return resp.data.balance;       // retorna novo saldo
       } catch (err) {
@@ -27,11 +25,9 @@ export function useTransactions() {
     async (toUser, amount) => {
       setError(null);
       try {
-        const token = localStorage.getItem('token');
-        const resp = await axios.post(
+        const resp = await api.post(
           '/pix',
-          { to_user: toUser, amount },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { to_user: toUser, amount }
         );
         return resp.data.balance;       // retorna novo saldo do remetente
       } catch (err) {

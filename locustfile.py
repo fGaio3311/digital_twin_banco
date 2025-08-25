@@ -1,36 +1,41 @@
-from uuid import uuid4
-from locust import HttpUser, task, between  # type: ignore[import]
+import random
+from locust import HttpUser, task, between
 
+def load_tokens():
+    with open("tokens.txt") as f:
+        return [line.strip() for line in f if line.strip()]
+
+TOKENS = load_tokens()
 
 class BankUser(HttpUser):
     wait_time = between(1, 3)
 
     def on_start(self):
-        # 1) registra um usuário novo e único
-        username = f"user-{uuid4().hex[:8]}"
-        self.client.post("/register", json={"username": username, "password": "pass"})
-
-        # 2) faz login e armazena o token
-        resp = self.client.post(
-            "/token",
-            data={"username": username, "password": "pass"}
-        )
-        token = resp.json().get("access_token")
+        if not TOKENS:
+            raise RuntimeError("Nenhum token carregado; rode o pré-criador.")
+        token = random.choice(TOKENS)
         self.headers = {"Authorization": f"Bearer {token}"}
-
-        # 3) garante que esse usuário tenha saldo suficiente para o pix
-        self.client.post("/deposit", headers=self.headers, json={"amount": 100})
 
     @task(3)
     def view_balance(self):
-        self.client.get("/balance", headers=self.headers)
+        self.client.get("/balance", headers=self.headers, name="/balance")
 
     @task(2)
     def deposit(self):
-        self.client.post("/deposit", headers=self.headers, json={"amount": 10})
+        self.client.post("/deposit", headers=self.headers, json={"amount": 10}, name="/deposit")
 
     @task(1)
     def pix(self):
-        # envia para um segundo usuário pré-criado (fora do Locust)
-        self.client.post("/pix", headers=self.headers,
-                         json={"to_user": "user2", "amount": 5})
+        self.client.post("/pix", headers=self.headers, json={"to_user": "loadtest-target", "amount": 5}, name="/pix")
+
+    @task(1)
+    def get_metrics(self):
+        self.client.get("/metrics", name="/metrics")
+
+    @task(1)
+    def get_cost(self):
+        self.client.get("/cost", params={
+            "cpu_price": 0.10,
+            "mem_price": 0.05,
+            "msg_price": 0.01
+        }, name="/cost")

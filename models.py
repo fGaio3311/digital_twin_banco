@@ -1,5 +1,5 @@
 from typing import Any
-from sqlalchemy import (  # type: ignore[import]
+from sqlalchemy import (
     Column,
     Integer,
     String,
@@ -8,7 +8,7 @@ from sqlalchemy import (  # type: ignore[import]
     DateTime,
     Enum,
 )
-from sqlalchemy.orm import declarative_base, relationship  # type: ignore[import]
+from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 import enum
 
@@ -21,7 +21,7 @@ class TransactionType(enum.Enum):
     pix_received = "pix_received"
 
 
-class User(Base):  # type: ignore[misc]
+class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
@@ -32,7 +32,7 @@ class User(Base):  # type: ignore[misc]
     logs = relationship("Log", back_populates="user")
 
 
-class Transaction(Base):  # type: ignore[misc]
+class Transaction(Base):
     __tablename__ = 'transactions'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -42,7 +42,7 @@ class Transaction(Base):  # type: ignore[misc]
     user = relationship("User", back_populates="transactions")
 
 
-class Log(Base):  # type: ignore[misc]
+class Log(Base):
     __tablename__ = 'logs'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)

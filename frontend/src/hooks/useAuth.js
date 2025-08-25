@@ -8,7 +8,7 @@ export function useAuth() {
     const { data } = await api.post('/token', `username=${username}&password=${password}`, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
-    localStorage.setItem('jwt', data.access_token);
+    localStorage.setItem('token', data.access_token); // padronizado para 'token'
     setUser(username);
   }
 
@@ -17,7 +17,7 @@ export function useAuth() {
   }
 
   function logout() {
-    localStorage.removeItem('jwt');
+    localStorage.removeItem('token'); // padronizado para 'token'
     setUser(null);
   }
 
