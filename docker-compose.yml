@@ -1,50 +1,89 @@
 services:
+  # Backend API com Digital Twin
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: digital-twin-api
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    command: uvicorn main_simple:app --host 0.0.0.0 --port 8001
     ports:
-      - "8000:8000"
-    env_file: .env
+      - "8001:8001"
     environment:
       - MQTT_BROKER_HOST=mqtt-broker
       - MQTT_BROKER_PORT=1883
+      - DATABASE_URL=sqlite:///./digital_twin.db
+    volumes:
+      - ./test.db:/app/digital_twin.db
+      - api_logs:/app/logs
     depends_on:
-      - postgres-twin
       - mqtt-broker
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # Frontend React
+  frontend:
+    build:
+      context: ./frontend_new
+      dockerfile: Dockerfile
+    container_name: digital-twin-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=/api
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # MQTT Broker
   mqtt-broker:
     image: eclipse-mosquitto:2.0
     container_name: mqtt-broker
     ports:
       - "1883:1883"
+      - "9001:9001"
     volumes:
-      - ./config:/mosquitto/config:ro
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
 
+  # MQTT Subscriber para monitoramento
   mqtt-subscriber:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mqtt-subscriber
     command: python mqtt_subscriber.py
-    env_file: .env
     environment:
       - MQTT_BROKER_HOST=mqtt-broker
       - MQTT_BROKER_PORT=1883
     depends_on:
       - mqtt-broker
+      - api
+    restart: unless-stopped
 
-  postgres-twin:
-    image: postgres:15
-    container_name: postgres-twin
-    environment:
-      - POSTGRES_USER=twin
-      - POSTGRES_PASSWORD=twin
-      - POSTGRES_DB=twin
+  # Nginx para proxy reverso (opcional)
+  nginx:
+    image: nginx:alpine
+    container_name: digital-twin-nginx
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
 
 volumes:
   mosquitto_data:
+    driver: local
   mosquitto_log:
-  pgdata:
+    driver: local
+  api_logs:
+    driver: local

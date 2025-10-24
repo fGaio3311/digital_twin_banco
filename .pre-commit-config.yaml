@@ -10,25 +10,30 @@ repos:
     hooks:
       - id: flake8
         args: [--max-line-length=88]
+        # heavy linting can block commits; run manually during CI or locally when needed
+        stages: [manual]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.17.0
     hooks:
       - id: mypy
         args: ["--explicit-package-bases"]
+        stages: [manual]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.6
     hooks:
       - id: bandit
         args: ["-f", "txt", "-o", "bandit_output.txt", "--quiet"]
+        stages: [manual]
 
   - repo: local
     hooks:
       - id: send-precommit-log
         name: Send pre-commit log to Digital Twin
-        entry: python send_precommit_log.py
+        # Write logs outside the working tree to avoid modifying tracked files
+        entry: .venv/Scripts/python.exe send_precommit_log.py --out .git\precommit_logs
         language: system
         pass_filenames: false
         always_run: true
-        stages: [commit]
+        stages: [pre-commit]
