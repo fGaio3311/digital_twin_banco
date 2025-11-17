@@ -106,8 +106,8 @@ def record_event(endpoint: str, latency: float, success: bool, user: Optional[st
     try:
         with METRICS_LOG_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
-    except Exception:
-        pass  # não quebra a API por falha de log
+    except OSError as e:
+        logging.warning(f"Failed to write metrics log: {e}")  # não quebra a API por falha de log
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
@@ -138,9 +138,10 @@ app.add_middleware(MetricsMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins or ["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ---------- MQTT publisher ----------
@@ -262,6 +263,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 class DepositRequest(BaseModel):
     amount: float = Field(gt=0, description="O valor do depósito deve ser maior que zero.")
 
@@ -373,11 +378,24 @@ async def upload_logs(file: UploadFile = File(...), db: Session = Depends(get_db
     return {"imported": len(events)}
 
 @app.post("/token", response_model=Token)
-def login(
-    form: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
-    request: Request = None
+async def login(
+    request: Request = None,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    json_data: LoginRequest = None,
+    db: Session = Depends(get_db)
 ):
+    # Use either form data or JSON data
+    username = form_data.username if form_data else json_data.username if json_data else None
+    password = form_data.password if form_data else json_data.password if json_data else None
+
+    print(f"Login attempt - Username: {username}")
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing credentials"
+        )
+
     ip = request.client.host if request else "unknown"
     if not TESTING and not allow(ip):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
@@ -500,6 +518,13 @@ def get_logs(
                action=log.action)
         for log in logs
     ]
+
+@app.get("/user/me")
+def get_user_me(current_user: User = Depends(get_current_user)):
+    return {
+        "username": current_user.username,
+        "balance": current_user.balance
+    }
 
 # --- Digital Twin endpoints ---
 @app.get("/digital-twin/export/logs")

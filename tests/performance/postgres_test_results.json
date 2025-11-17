@@ -1,0 +1,22 @@
+{
+  "test_duration_seconds": 1.241,
+  "total_requests": 100,
+  "requests_per_second": 80.65,
+  "success_rate_percent": 100,
+  "response_times": {
+    "average_ms": 12.41,
+    "median_ms": 10.54,
+    "min_ms": 6.03,
+    "max_ms": 81.32,
+    "stdev_ms": 8.58
+  },
+  "endpoint_details": {
+    "/ping": {
+      "total_requests": 100,
+      "success_rate": 100,
+      "average_response_ms": 12.41,
+      "median_response_ms": 10.54,
+      "failures": 0
+    }
+  }
+}

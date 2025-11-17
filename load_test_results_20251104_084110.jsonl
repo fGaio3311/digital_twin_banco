@@ -1,0 +1,37 @@
+{
+  "test_duration_seconds": 299.31670022010803,
+  "total_requests": 8978,
+  "requests_per_second": 29.994985222668372,
+  "success_rate_percent": 54.00980173758075,
+  "response_times": {
+    "average_ms": 195.89938589364394,
+    "p95_ms": 699.5993999880739,
+    "p99_ms": 1427.9546999605373
+  },
+  "endpoint_details": {
+    "/register": {
+      "total_requests": 50,
+      "success_rate": 100.0,
+      "average_response_ms": 132.82902799895965,
+      "p95_response_ms": 166.88920004526153
+    },
+    "/token": {
+      "total_requests": 50,
+      "success_rate": 100.0,
+      "average_response_ms": 191.23115800088271,
+      "p95_response_ms": 289.1227000509389
+    },
+    "/transactions": {
+      "total_requests": 744,
+      "success_rate": 100.0,
+      "average_response_ms": 150.02358239159733,
+      "p95_response_ms": 515.7224999857135
+    },
+    "/balance": {
+      "total_requests": 4005,
+      "success_rate": 100.0,
+      "average_response_ms": 205.26730776502845,
+      "p95_response_ms": 755.1863999688067
+    }
+  }
+}

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseSettings
 
 
 def _split_csv(v: Optional[str]) -> List[str]:
@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
 
     # -------------------- DB ---------------------
-    database_url: Optional[str] = None
+    database_url: Optional[str] = None  # Deprecated: used for SQLAlchemy
+    mongodb_url: str = "mongodb://localhost:27017"
+    mongodb_name: str = "digital_twin"
     db_pool_size: int = 20
     db_max_overflow: int = 30
     db_pool_timeout: int = 30
@@ -41,14 +43,13 @@ class Settings(BaseSettings):
     # -------------------- Front ------------------
     react_app_api_url: str = "http://localhost:8000"
 
-    # -------------------- Pydantic config --------
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        env_prefix="",
-        extra="ignore",  # ignora variáveis de ambiente não mapeadas
-    )
+    # -------------------- Pydantic config (v1 style) --------
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+        env_prefix = ""
+        extra = "ignore"  # ignore unmapped env vars
 
     def model_post_init(self, __context: dict) -> None:
         # Permitir CORS_ORIGINS em CSV

@@ -24,7 +24,8 @@ def detect_anomalies(events: List[Dict[str, Any]], rules: Dict[str, Any] = DEFAU
         ts = ev.get("timestamp")
         try:
             dt = datetime.fromisoformat(ts)
-        except Exception:
+        except ValueError:
+            # Skip events with invalid timestamps
             continue
 
         # High value rules

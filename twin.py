@@ -184,7 +184,8 @@ class DigitalTwin:
             ts = ev.get("timestamp")
             try:
                 dt = _to_dt(ts)
-            except Exception:
+            except (ValueError, TypeError):
+                # Skip events with invalid timestamps
                 continue
             by_hour[dt.hour] += 1
             by_weekday[dt.weekday()] += 1

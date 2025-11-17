@@ -75,13 +75,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('username');
       delete axios.defaults.headers.common['Authorization'];
 
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+      const params = new URLSearchParams();
+      params.append('username', username);
+      params.append('password', password);
 
       console.log('Attempting login with:', { username, password });
 
-      const response = await axios.post(`${API_BASE_URL}/token`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/token`, params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },

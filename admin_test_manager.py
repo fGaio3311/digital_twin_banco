@@ -387,8 +387,9 @@ class BankingUser(HttpUser):
                         if response.status_code == 200:
                             success_count += 1
                         total_time += response.elapsed.total_seconds()
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"Error in concurrent request: {str(e)}")
+                        # Log error and continue with next request
 
                 duration = (time.time() - start_time) * 1000
                 avg_response_time = (total_time / len(futures)) * 1000

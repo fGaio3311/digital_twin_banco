@@ -84,6 +84,25 @@ Bibliotecas principais (requirements.txt):
 
 ---
 
+## Considerações de Segurança
+
+1. Configurações:
+   * Use uma chave secreta forte em produção (SECRET_KEY)
+   * Configure API_HOST para `127.0.0.1` em desenvolvimento
+   * Use HTTPS em produção
+   * Todos os requests têm timeout de 10 segundos
+
+2. Simulação e Aleatoriedade:
+   * Dados simulados usam números aleatórios com seed para reprodutibilidade
+   * NÃO use para fins criptográficos
+   * Use o módulo `secrets` para operações de segurança
+
+3. Boas Práticas:
+   * Mantenha todas as dependências atualizadas
+   * Use ambientes virtuais isolados
+   * Não exponha logs sensíveis
+   * Configure rate limiting apropriado
+
 ## .env de Exemplo
 
 Crie um `.env` na raiz:
@@ -95,10 +114,14 @@ DB_POOL_SIZE=20
 DB_MAX_OVERFLOW=30
 DB_POOL_TIMEOUT=30
 
-# Auth
-SECRET_KEY=supersecretkey
+# Auth (IMPORTANTE: Use valores seguros em produção)
+SECRET_KEY=change-this-to-a-secure-secret-key
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# API Configuration
+API_HOST=127.0.0.1  # Use appropriate host in production
+API_PORT=8000
 
 # MQTT
 MQTT_BROKER_HOST=mqtt-broker
@@ -318,9 +341,21 @@ Permissão de execução: `chmod +x scripts/smoke.sh`.
 
 ---
 
+## Security Improvements
+
+Recent security enhancements:
+
+* ✅ Added timeouts to all HTTP requests (10s default)
+* ✅ Moved API host/port configuration to environment variables
+* ✅ Improved random number generation with seeded randoms for simulations
+* ✅ Enhanced error handling in test manager
+* ✅ Added security notes to documentation
+
 ## Próximos Passos / Roadmap
 
 * ✅ Substituir front web por CLI (feito)
+* ✅ Implementar timeouts em requests
+* ✅ Melhorar geração de números aleatórios
 * 🔒 Implementar rate limiting real (Redis ou SlowAPI)
 * 🔑 MFA / 2FA em login
 * 📈 Métricas de performance (Prometheus/Grafana)

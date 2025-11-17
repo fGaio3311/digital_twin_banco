@@ -144,30 +144,42 @@ class EngineeringMonitor:
 
     def _collect_transaction_metrics(self):
         """Coleta métricas transacionais"""
-        # Simula coleta de métricas transacionais
-        self.transaction_metrics.active_transactions = random.randint(10, 100)
+        # Use timestamp as seed for reproducible randomness
+        seed = int(time.time())
+        r = random.Random(seed)
+        self.transaction_metrics.active_transactions = r.randint(10, 100)
 
     def _collect_database_metrics(self):
         """Coleta métricas do banco de dados"""
+        # Use timestamp as seed for reproducible randomness
+        seed = int(time.time())
+        r = random.Random(seed)
+
         # Simula métricas de banco
         self.database_metrics.connection_pool_size = 20
-        self.database_metrics.active_connections = random.randint(5, 18)
-        self.database_metrics.query_avg_time = random.uniform(50, 200)  # ms
+        self.database_metrics.active_connections = r.randint(5, 18)
+        self.database_metrics.query_avg_time = r.uniform(50, 200)  # ms
         self.database_metrics.disk_usage_percent = psutil.disk_usage('/').percent
 
     def _collect_queue_metrics(self):
         """Coleta métricas das filas"""
+        # Use timestamp and queue name as seed for reproducible randomness
+        seed = int(time.time())
         for queue_name, metrics in self.queue_metrics.items():
-            metrics.queue_size = random.randint(0, 50)
-            metrics.avg_processing_time = random.uniform(100, 500)  # ms
-            metrics.oldest_message_age = random.uniform(0, 300)  # seconds
+            r = random.Random(seed + hash(queue_name))
+            metrics.queue_size = r.randint(0, 50)
+            metrics.avg_processing_time = r.uniform(100, 500)  # ms
+            metrics.oldest_message_age = r.uniform(0, 300)  # seconds
 
     def _collect_integration_metrics(self):
         """Coleta métricas das integrações"""
+        # Use timestamp and integration name as seed for reproducible randomness
+        seed = int(time.time())
         for integration_name, metrics in self.integration_metrics.items():
+            r = random.Random(seed + hash(integration_name))
             # Simula chamada de integração
-            success_rate = random.uniform(0.95, 1.0)
-            metrics.avg_response_time = random.uniform(100, 1000)  # ms
+            success_rate = r.uniform(0.95, 1.0)
+            metrics.avg_response_time = r.uniform(100, 1000)  # ms
 
             if success_rate > 0.99:
                 metrics.status = ComponentStatus.HEALTHY
@@ -188,12 +200,15 @@ class EngineeringMonitor:
 
     def _calculate_sla_metrics(self):
         """Calcula métricas de SLA"""
+        # Use timestamp and service name as seed for reproducible randomness
+        seed = int(time.time())
         for service_name, sla in self.sla_metrics.items():
+            r = random.Random(seed + hash(service_name))
             # Simula cálculo de disponibilidade
-            sla.current_availability = random.uniform(99.0, 99.99)
+            sla.current_availability = r.uniform(99.0, 99.99)
             sla.uptime_percentage = sla.current_availability
-            sla.mttr = random.uniform(5, 30)  # minutes
-            sla.mtbf = random.uniform(720, 8760)  # hours
+            sla.mttr = r.uniform(5, 30)  # minutes
+            sla.mtbf = r.uniform(720, 8760)  # hours
 
     def _check_vital_signs(self):
         """Verifica sinais vitais do sistema"""

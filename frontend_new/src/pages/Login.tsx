@@ -43,9 +43,12 @@ const Login: React.FC = () => {
     console.log('Login attempt:', { username: formData.username, password: formData.password });
 
     try {
-      await login(formData.username, formData.password);
-      showSuccess('Login realizado com sucesso!');
-      navigate('/dashboard');
+      var regex = /[<]*<[\s\u200B]*script[\s\u200B]*>.*[/]*[<]*<[\s\u200B]*\/[\s\u200B]*script[\s\u200B]*>/ig;
+      if(!(formData.username.match(regex) || formData.password.match(regex))) {
+        await login(formData.username, formData.password);
+        showSuccess('Login realizado com sucesso!');
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       const errorMessage = err.message || 'Erro ao fazer login';

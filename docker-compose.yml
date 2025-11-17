@@ -1,28 +1,59 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13
+    container_name: digital-twin-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=digital_twin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Backend API com Digital Twin
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: digital-twin-api
-    command: uvicorn main_simple:app --host 0.0.0.0 --port 8001
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "8001:8001"
+      - "8000:8000"
     environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/digital_twin
       - MQTT_BROKER_HOST=mqtt-broker
       - MQTT_BROKER_PORT=1883
-      - DATABASE_URL=sqlite:///./digital_twin.db
+      - SECRET_KEY=your_super_secret_key_123
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - CORS_ORIGINS=["http://localhost:3000"]
     volumes:
-      - ./test.db:/app/digital_twin.db
+      - ./:/app
       - api_logs:/app/logs
     depends_on:
-      - mqtt-broker
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/ping"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
 
   # Frontend React
   frontend:
@@ -30,12 +61,12 @@ services:
       context: ./frontend_new
       dockerfile: Dockerfile
     container_name: digital-twin-frontend
-    ports:
-      - "3000:80"
     environment:
-      - REACT_APP_API_URL=/api
+      - REACT_APP_API_URL=http://localhost/api
+      - REACT_APP_MQTT_URL=ws://localhost:9001
     depends_on:
       - api
+      - mqtt-broker
     restart: unless-stopped
 
   # MQTT Broker
@@ -49,6 +80,16 @@ services:
       - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 mosquitto_sub -t '$$SYS/#' -C 1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   # MQTT Subscriber para monitoramento
@@ -81,6 +122,8 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
+    driver: local
   mosquitto_data:
     driver: local
   mosquitto_log:

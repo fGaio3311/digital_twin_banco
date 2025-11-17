@@ -31,9 +31,9 @@ repos:
     hooks:
       - id: send-precommit-log
         name: Send pre-commit log to Digital Twin
-        # Write logs outside the working tree to avoid modifying tracked files
-        entry: .venv/Scripts/python.exe send_precommit_log.py --out .git\precommit_logs
+        # Write logs to .git/precommit_logs directory (manual stage - optional)
+        entry: python send_precommit_log.py --out .git/precommit_logs
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-commit]
+        stages: [manual]

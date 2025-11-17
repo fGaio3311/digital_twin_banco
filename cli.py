@@ -33,7 +33,7 @@ def _auth_header():
 
 @APP.command()
 def twin_sazonalidade_chart(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/digital-twin/sazonalidade")
+    r = requests.get(f"{api}/digital-twin/sazonalidade", timeout=10)
     data = r.json()
     typer.echo("== Por hora ==")
     _bar_chart({int(k): v for k, v in data["by_hour"].items()})
@@ -45,14 +45,14 @@ def twin_sazonalidade_chart(api: str = API_URL_DEFAULT):
 
 @APP.command()
 def ping(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/ping")
+    r = requests.get(f"{api}/ping", timeout=5)
     typer.echo(r.json())
 
 
 @APP.command()
 def login(user: str = typer.Option(..., "--user"), password: str = typer.Option(..., "--pass"), api: str = API_URL_DEFAULT):
     data = {"username": user, "password": password}
-    r = requests.post(f"{api}/token", data=data)
+    r = requests.post(f"{api}/token", data=data, timeout=10)
     if r.status_code != 200:
         typer.echo(f"Erro: {r.status_code} {r.text}")
         raise typer.Exit(1)
@@ -62,68 +62,68 @@ def login(user: str = typer.Option(..., "--user"), password: str = typer.Option(
 
 @APP.command()
 def register(username: str, password: str, api: str = API_URL_DEFAULT):
-    r = requests.post(f"{api}/register", json={"username": username, "password": password})
+    r = requests.post(f"{api}/register", json={"username": username, "password": password}, timeout=10)
     typer.echo(r.json())
 
 
 @APP.command()
 def balance(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/balance", headers=_auth_header())
+    r = requests.get(f"{api}/balance", headers=_auth_header(), timeout=10)
     typer.echo(r.json())
 
 
 @APP.command()
 def deposit(amount: float, api: str = API_URL_DEFAULT):
-    r = requests.post(f"{api}/deposit", json={"amount": amount}, headers=_auth_header())
+    r = requests.post(f"{api}/deposit", json={"amount": amount}, headers=_auth_header(), timeout=10)
     typer.echo(r.json())
 
 
 @APP.command()
 def pix(to_user: str, amount: float, api: str = API_URL_DEFAULT):
-    r = requests.post(f"{api}/pix", json={"to_user": to_user, "amount": amount}, headers=_auth_header())
+    r = requests.post(f"{api}/pix", json={"to_user": to_user, "amount": amount}, headers=_auth_header(), timeout=10)
     typer.echo(r.json())
 
 
 @APP.command("logs")
 def get_logs(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/logs", headers=_auth_header())
+    r = requests.get(f"{api}/logs", headers=_auth_header(), timeout=10)
     typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
 
 
 # ---- Digital Twin ----
 @APP.command()
 def twin_summary(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/digital-twin/summary")
+    r = requests.get(f"{api}/digital-twin/summary", timeout=10)
     typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
 
 
 @APP.command()
 def twin_stats(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/digital-twin/stats")
+    r = requests.get(f"{api}/digital-twin/stats", timeout=10)
     typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
 
 
 @APP.command()
 def twin_sazonalidade(api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/digital-twin/sazonalidade")
+    r = requests.get(f"{api}/digital-twin/sazonalidade", timeout=10)
     typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
 
 
 @APP.command()
 def twin_shadow(username: str, api: str = API_URL_DEFAULT):
-    r = requests.get(f"{api}/digital-twin/shadow/{username}")
+    r = requests.get(f"{api}/digital-twin/shadow/{username}", timeout=10)
     typer.echo(json.dumps(r.json(), indent=2, ensure_ascii=False))
 
 
 @APP.command()
 def export_logs(api_base_url: str, token: str, path: str, api: str = API_URL_DEFAULT):
-    r = requests.post(f"{api}/digital-twin/export", json={"api_base_url": api_base_url, "token": token, "path": path})
+    r = requests.post(f"{api}/digital-twin/export", json={"api_base_url": api_base_url, "token": token, "path": path}, timeout=10)
     typer.echo(r.json())
 
 
 @APP.command()
 def load_logs(path: str, api: str = API_URL_DEFAULT):
-    r = requests.post(f"{api}/digital-twin/load", json={"path": path})
+    r = requests.post(f"{api}/digital-twin/load", json={"path": path}, timeout=10)
     typer.echo(r.json())
 
 

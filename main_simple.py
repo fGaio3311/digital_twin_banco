@@ -34,9 +34,12 @@ from technology_monitor import technology_monitor
 from admin_test_manager import admin_test_manager
 
 # Configurações básicas
-SECRET_KEY = "your-secret-key-here"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from dotenv import load_dotenv
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "default-key-please-change")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -690,4 +693,6 @@ async def get_system_status():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    host = os.getenv("API_HOST", "127.0.0.1")  # Default to localhost
+    port = int(os.getenv("API_PORT", "8001"))
+    uvicorn.run(app, host=host, port=port)
