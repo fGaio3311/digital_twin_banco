@@ -58,7 +58,7 @@ services:
   # Frontend React
   frontend:
     build:
-      context: ./frontend_new
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: digital-twin-frontend
     environment:

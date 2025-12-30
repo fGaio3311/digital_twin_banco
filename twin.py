@@ -133,8 +133,11 @@ class DigitalTwin:
             "total_pix_enviado": u["total_pix_enviado"],
             "total_pix_recebido": u["total_pix_recebido"],
             "counters": dict(u["counters"]),
-            "ultimos_eventos": u["eventos"][-20:],  # último N
+            "eventos": u["eventos"],  # último N
         }
+    def get_janela_de_logins(self):
+        l_t = self.users["eventos"]
+        return l_t
 
     def summary(self) -> Dict[str, Any]:
         return {

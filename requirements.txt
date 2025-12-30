@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 sqlalchemy
-pydantic<2.0.0
+pydantic>=2.0.0
+pydantic-settings
 python-jose
 requests
 paho-mqtt

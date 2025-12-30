@@ -83,7 +83,12 @@ if settings.database_url.startswith("postgres"):
     wait_for_postgres(settings.database_url)
 
 # ---------- FastAPI ----------
-app = FastAPI(title=settings.title, version=settings.version)
+app = FastAPI(
+    title=settings.title,
+    description="Bank Simulator with Digital Twin",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 # ---------- Autenticação (precisa antes do middleware que decodifica token) ----------
 SECRET_KEY = settings.secret_key
@@ -402,8 +407,8 @@ async def login(
                             "Muitas tentativas, tente novamente mais tarde.")
 
     with write_lock:
-        user = db.query(User).filter_by(username=form.username).first()
-        if not user or not verify_password(form.password, user.hashed_password):
+        user = db.query(User).filter_by(username=username).first()
+        if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED,
                 "Credenciais inválidas",
