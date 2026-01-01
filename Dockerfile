@@ -46,5 +46,5 @@ EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Roda a API com MongoDB
-CMD ["uvicorn", "main_mongo:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Roda a API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

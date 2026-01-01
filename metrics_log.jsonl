@@ -8572,3 +8572,11 @@
 {"time": "2025-11-17T19:33:57.519855", "endpoint": "/docs", "latency_ms": 1.9991397857666016, "success": true, "user": null}
 {"time": "2025-11-17T19:33:58.181753", "endpoint": "/openapi.json", "latency_ms": 72.84736633300781, "success": true, "user": null}
 {"time": "2025-11-17T19:34:18.984638", "endpoint": "/token", "latency_ms": 17.07625389099121, "success": false, "user": null}
+{"time": "2026-01-01T01:07:25.421841", "endpoint": "/", "latency_ms": 125.60701370239258, "success": true, "user": null}
+{"time": "2026-01-01T01:07:25.451748", "endpoint": "/static/js/main.6a6455b8.js", "latency_ms": 3.5991668701171875, "success": true, "user": null}
+{"time": "2026-01-01T01:07:25.475996", "endpoint": "/static/css/main.d558837b.css", "latency_ms": 3.9970874786376953, "success": true, "user": null}
+{"time": "2026-01-01T01:14:01.097656", "endpoint": "/", "latency_ms": 109.0385913848877, "success": true, "user": null}
+{"time": "2026-01-01T01:14:01.209416", "endpoint": "/static/js/main.6a6455b8.js", "latency_ms": 7.547616958618164, "success": true, "user": null}
+{"time": "2026-01-01T01:14:01.213178", "endpoint": "/static/css/main.d558837b.css", "latency_ms": 7.758378982543945, "success": true, "user": null}
+{"time": "2026-01-01T01:14:01.377473", "endpoint": "/favicon.ico", "latency_ms": 3.0052661895751953, "success": true, "user": null}
+{"time": "2026-01-01T01:14:01.379469", "endpoint": "/logo192.png", "latency_ms": 5.9967041015625, "success": true, "user": null}

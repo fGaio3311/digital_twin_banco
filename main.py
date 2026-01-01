@@ -16,6 +16,7 @@ from fastapi import (
     status, Request, Response, UploadFile, File
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, select, update
@@ -36,17 +37,23 @@ from middleware.limiter import allow
 from app.utils import process_logs_file
 
 # ---------- Métricas Prometheus ----------
+# Usar um registry separado para evitar duplicação
+from prometheus_client import CollectorRegistry
+registry = CollectorRegistry()
+
 PROCESS_LATENCY = Histogram(
     'dt_process_latency_seconds',
     'Tempo para aplicar um evento no Digital Twin',
-    buckets=[0.001, 0.01, 0.05, 0.1, 0.5, 1, 2]
+    buckets=[0.001, 0.01, 0.05, 0.1, 0.5, 1, 2],
+    registry=registry
 )
 MESSAGES_PROCESSED = Counter(
     'dt_messages_processed_total',
-    'Total de eventos processados pelo Digital Twin'
+    'Total de eventos processados pelo Digital Twin',
+    registry=registry
 )
-CPU_USAGE = Gauge('dt_cpu_percent', 'Percentual de CPU usado pelo DT')
-MEM_USAGE = Gauge('dt_mem_bytes', 'Uso de memória RAM (RSS) pelo DT')
+CPU_USAGE = Gauge('dt_cpu_percent', 'Percentual de CPU usado pelo DT', registry=registry)
+MEM_USAGE = Gauge('dt_mem_bytes', 'Uso de memória RAM (RSS) pelo DT', registry=registry)
 
 # registra o início para cálculo de uptime
 START_TIME = time.time()
@@ -353,7 +360,7 @@ def cost(
 
 @app.get("/metrics")
 def metrics():
-    data = generate_latest()
+    data = generate_latest(registry)
     return Response(data, media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/health")
@@ -560,6 +567,13 @@ def code_analysis_logs():
 def twin_anomalies(user: Optional[str] = None):
     return twin.anomalies(user)
 
+# Servir frontend estático
+from pathlib import Path
+frontend_path = Path(__file__).parent / "frontend" / "build"
+if frontend_path.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="static")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Usar reload=False para evitar problema com Prometheus CollectorRegistry duplicado
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

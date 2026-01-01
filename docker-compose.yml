@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: digital-twin-api
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
@@ -61,8 +61,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: digital-twin-frontend
+    ports:
+      - "3000:80"
     environment:
-      - REACT_APP_API_URL=http://localhost/api
+      - REACT_APP_API_URL=http://localhost:8000
       - REACT_APP_MQTT_URL=ws://localhost:9001
     depends_on:
       - api
