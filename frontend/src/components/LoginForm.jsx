@@ -23,7 +23,8 @@ export default function LoginForm({ onLogin }) {
 
       const token = res.data.access_token
       localStorage.setItem('token', token)
-      onLogin(token)
+      localStorage.setItem('username', username)
+      onLogin(token, username)
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao logar')
     }

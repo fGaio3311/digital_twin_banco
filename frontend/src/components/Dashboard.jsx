@@ -77,6 +77,36 @@ export default function Dashboard() {
 
       <DepositForm onDone={load} />
       <PixForm onDone={load} />
+
+      {/* Admin Panel Link */}
+      {localStorage.getItem('username') === 'admin' && (
+        <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
+          <a href="/admin" style={{
+            backgroundColor: '#2c3e50',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '4px',
+            textDecoration: 'none',
+            marginRight: '10px'
+          }}>
+            🔧 Painel de Admin
+          </a>
+          <button onClick={() => {
+            localStorage.removeItem('token')
+            localStorage.removeItem('username')
+            window.location.href = '/'
+          }} style={{
+            backgroundColor: '#e74c3c',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer'
+          }}>
+            🚪 Logout
+          </button>
+        </div>
+      )}
     </div>
   )
 }

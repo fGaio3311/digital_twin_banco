@@ -9,6 +9,7 @@ import threading
 import psutil
 import pathlib
 from urllib.parse import urlparse
+import requests
 
 import psycopg2  # necessário para wait_for_postgres
 from fastapi import (
@@ -19,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, select, update
+from sqlalchemy import create_engine, select, update, func
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.pool import StaticPool
@@ -566,6 +567,83 @@ def code_analysis_logs():
 @app.get("/digital-twin/anomalies")
 def twin_anomalies(user: Optional[str] = None):
     return twin.anomalies(user)
+
+# --- Admin endpoints ---
+@app.post("/admin/tests/integration")
+async def admin_tests_integration(current_user: User = Depends(get_current_user)):
+    """Executa testes de integração (apenas para admin)"""
+    if current_user.username != "admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
+
+    results = []
+
+    # Test 1: Health Check
+    try:
+        response = requests.get(f"http://localhost:8000/health", timeout=5)
+        results.append({
+            "test_name": "API Health",
+            "status": "PASS" if response.status_code == 200 else "FAIL",
+            "duration": 0,
+            "message": response.json().get("status")
+        })
+    except Exception as e:
+        results.append({
+            "test_name": "API Health",
+            "status": "FAIL",
+            "duration": 0,
+            "message": str(e)
+        })
+
+    # Test 2: Digital Twin Summary
+    try:
+        response = requests.get(f"http://localhost:8000/digital-twin/summary", timeout=5)
+        results.append({
+            "test_name": "Digital Twin Summary",
+            "status": "PASS" if response.status_code == 200 else "FAIL",
+            "duration": 0,
+            "message": "OK" if response.status_code == 200 else f"HTTP {response.status_code}"
+        })
+    except Exception as e:
+        results.append({
+            "test_name": "Digital Twin Summary",
+            "status": "FAIL",
+            "duration": 0,
+            "message": str(e)
+        })
+
+    # Test 3: Database Connection
+    try:
+        user_count = db.query(User).count()
+        results.append({
+            "test_name": "Database Connection",
+            "status": "PASS",
+            "duration": 0,
+            "message": f"{user_count} users in database"
+        })
+    except Exception as e:
+        results.append({
+            "test_name": "Database Connection",
+            "status": "FAIL",
+            "duration": 0,
+            "message": str(e)
+        })
+
+    return {"results": results}
+
+@app.get("/admin/dashboard/stats")
+def admin_dashboard_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retorna estatísticas do dashboard (apenas para admin)"""
+    if current_user.username != "admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
+
+    total_users = db.query(User).count()
+    total_balance = db.query(User).with_entities(func.sum(User.balance)).scalar() or 0
+
+    return {
+        "total_users": total_users,
+        "total_balance": total_balance,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 # Servir frontend estático
 from pathlib import Path
