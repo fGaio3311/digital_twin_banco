@@ -1,6 +1,10 @@
 # digital_twin/twin.py
 from __future__ import annotations
 from anomaly_detection import detect_anomalies, DEFAULT_RULES
+import joblib
+import numpy as np
+import pandas as pd
+from pathlib import Path
 
 from collections import defaultdict, Counter
 from datetime import datetime
@@ -42,6 +46,18 @@ class DigitalTwin:
 
         # bucket especial para code_analysis, logs de pre-commit, etc.
         self.users["precommit"] = {"eventos": []}
+        # usage model (optional)
+        self._usage_model = None
+        self._usage_model_features = [
+            "num_requests",
+            "mean_latency_ms",
+            "median_latency_ms",
+            "std_latency_ms",
+            "error_rate",
+            "unique_endpoints",
+            "start_hour",
+            "day_of_week",
+        ]
 
     # ------------------ Entrada ------------------
     def apply_event(self, event: Dict[str, Any]) -> None:
@@ -212,3 +228,71 @@ class DigitalTwin:
         else:
             evs = self.eventos
         return detect_anomalies(evs, DEFAULT_RULES)
+
+    # ------------------ Model integration ------------------
+    def load_usage_model(self, path: str | Path) -> None:
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"Model file not found: {p}")
+        self._usage_model = joblib.load(p)
+
+    def predict_user_last_session(self, username: str, session_gap_minutes: int = 30) -> dict[str, Any] | None:
+        """Build features for the user's last session and predict duration (minutes).
+        Returns a dict with `features`, `predicted_duration_min` and `model_info`.
+        """
+        if self._usage_model is None:
+            raise RuntimeError("Usage model not loaded. Call load_usage_model(path) first.")
+
+        u = self.users.get(username)
+        if not u:
+            return None
+
+        # Build last session from user's events based on gap
+        from datetime import datetime, timedelta
+
+        evs = [e for e in u.get("eventos", []) if e.get("timestamp")]
+        if not evs:
+            return None
+        for e in evs:
+            if not isinstance(e.get("_dt"), datetime):
+                e["_dt"] = datetime.fromisoformat(e["timestamp"])
+        evs.sort(key=lambda x: x["_dt"])
+        gap = timedelta(minutes=session_gap_minutes)
+        # find last session block
+        last_session = []
+        last_ts = None
+        for e in reversed(evs):
+            if last_ts is None:
+                last_session.insert(0, e)
+                last_ts = e["_dt"]
+                continue
+            if last_ts - e["_dt"] > gap:
+                break
+            last_session.insert(0, e)
+            last_ts = e["_dt"]
+
+        if not last_session:
+            return None
+
+        # compute features similar to tools/usage_time_regression.make_session_record
+        latencies = [float(e.get("latency_ms", 0.0)) for e in last_session]
+        endpoints = [e.get("endpoint") for e in last_session]
+        successes = [bool(e.get("success", True)) for e in last_session]
+        start = last_session[0]["_dt"]
+        duration_min = max(0.0, (last_session[-1]["_dt"] - start).total_seconds() / 60.0)
+
+        feat = {
+            "num_requests": len(last_session),
+            "mean_latency_ms": float(np.mean(latencies)) if latencies else 0.0,
+            "median_latency_ms": float(np.median(latencies)) if latencies else 0.0,
+            "std_latency_ms": float(np.std(latencies)) if latencies else 0.0,
+            "error_rate": float(1.0 - sum(1 for s in successes if s) / len(successes)) if successes else 0.0,
+            "unique_endpoints": len(set(endpoints)),
+            "start_hour": start.hour,
+            "day_of_week": start.weekday(),
+        }
+
+        X = pd.DataFrame([feat])[self._usage_model_features].astype(float)
+        pred = float(self._usage_model.predict(X)[0])
+
+        return {"features": feat, "predicted_duration_min": pred, "actual_duration_min": duration_min}

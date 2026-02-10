@@ -55,10 +55,10 @@ services:
           cpus: '2'
           memory: 1G
 
-  # Frontend React
+  # Frontend React (TypeScript)
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend_new
       dockerfile: Dockerfile
     container_name: digital-twin-frontend
     ports:

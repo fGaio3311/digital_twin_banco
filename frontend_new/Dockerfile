@@ -38,14 +38,4 @@ EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 
-# Estágio de produção com nginx
-FROM nginx:alpine
-
-    # Copia os arquivos buildados
-    COPY --from=builder /app/build/ /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expõe a porta 80
-EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]

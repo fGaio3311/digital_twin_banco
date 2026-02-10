@@ -414,6 +414,7 @@ async def login(
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Muitas tentativas, tente novamente mais tarde.")
 
+
     with write_lock:
         user = db.query(User).filter_by(username=username).first()
         if not user or not verify_password(password, user.hashed_password):

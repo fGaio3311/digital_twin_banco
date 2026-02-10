@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Bank - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .left-panel h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .left-panel p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-right: 15px;
+        }
+
+        .feature-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .card-header-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .card-header h2 {
+            font-size: 28px;
+            color: #1976d2;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .card-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+
+        .form-links {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .form-links a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-links a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1976d2;
+            border: 2px solid #1976d2;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #999;
+            font-size: 13px;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 10px;
+            position: relative;
+        }
+
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .account-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .account-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .account-card.selected {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+
+        .account-role {
+            display: inline-block;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .account-role.admin {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .account-role.user {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .account-username {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .account-password {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .account-balance {
+            font-size: 12px;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        .account-check {
+            color: #1976d2;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1976d2;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .register-link a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .accounts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 20px;
+                max-width: 100%;
+            }
+
+            .card-header h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div>
+                <h1>🏦 Digital Bank</h1>
+                <p>A sua solução bancária digital segura e inovadora</p>
+
+                <div class="feature">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-text">
+                        <div class="feature-title">Segurança em Primeiro Lugar</div>
+                        <div class="feature-desc">Autenticação JWT e criptografia de dados</div>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-text">
+                        <div class="feature-title">Transações em Tempo Real</div>
+                        <div class="feature-desc">MQTT para notificações instantâneas</div>
+                    </div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-text">
+                        <div class="feature-title">Monitoramento Inteligente</div>
+                        <div class="feature-desc">Detecção de anomalias em tempo real</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-header-icon">🏦</div>
+                    <h2>Digital Bank</h2>
+                    <p>Acesse sua conta bancária</p>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Nome de usuário</label>
+                        <input type="text" id="username" name="username" required placeholder="Digite seu usuário">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" required placeholder="Digite sua senha">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Entrar</button>
+                </form>
+
+                <div class="divider"><span>Contas de Teste</span></div>
+
+                <div class="accounts-grid" id="accountsGrid"></div>
+
+                <div class="register-link">
+                    Não tem uma conta? <a href="/register">Cadastre-se</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        const testAccounts = [
+            { username: 'admin', password: 'admin123', role: 'Admin', balance: '10.000,00' },
+            { username: 'user1', password: 'user123', role: 'Usuário', balance: '5.000,00' },
+            { username: 'user2', password: 'user123', role: 'Usuário', balance: '3.000,00' },
+            { username: 'test', password: 'test123', role: 'Teste', balance: '1.000,00' }
+        ];
+
+        const form = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorDiv = document.getElementById('errorMessage');
+        const successDiv = document.getElementById('successMessage');
+        const submitBtn = document.getElementById('submitBtn');
+        const accountsGrid = document.getElementById('accountsGrid');
+
+        // Populate accounts
+        accountsGrid.innerHTML = testAccounts.map((acc, idx) => `
+            <div class="account-card" data-username="${acc.username}" data-password="${acc.password}">
+                ${usernameInput.value === acc.username ? '<span class="account-check">✓</span>' : ''}
+                <div class="account-role ${acc.role === 'Admin' ? 'admin' : 'user'}">${acc.role}</div>
+                <div class="account-username">${acc.username}</div>
+                <div class="account-password">${acc.password}</div>
+                <div class="account-balance">R$ ${acc.balance}</div>
+            </div>
+        `).join('');
+
+        // Account card click
+        document.querySelectorAll('.account-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const username = card.dataset.username;
+                const password = card.dataset.password;
+                usernameInput.value = username;
+                passwordInput.value = password;
+
+                // Update visual feedback
+                document.querySelectorAll('.account-card').forEach(c => {
+                    c.classList.remove('selected');
+                    c.innerHTML = c.innerHTML.replace('<span class="account-check">✓</span>', '');
+                });
+                card.classList.add('selected');
+                card.innerHTML = '<span class="account-check">✓</span>' + card.innerHTML;
+            });
+        });
+
+        // Form submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!username || !password) {
+                showError('Por favor, preencha todos os campos');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span>Entrando...';
+
+            try {
+                const params = new URLSearchParams();
+                params.append('username', username);
+                params.append('password', password);
+
+                const response = await fetch(`${API_URL}/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Erro ao fazer login');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('username', username);
+
+                showSuccess('Login realizado com sucesso!');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1500);
+            } catch (error) {
+                showError(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Entrar';
+            }
+        });
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function showSuccess(message) {
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

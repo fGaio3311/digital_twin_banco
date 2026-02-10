@@ -5,6 +5,7 @@ DEFAULT_RULES = {
     "big_deposit": {"tipo": "deposit", "threshold": 10000.0},
     "high_frequency": {"window_minutes": 1, "count": 5},
     "big_pix": {"tipo": "pix", "threshold": 5000.0},
+    "strange_moment_activity": {"between_0_and_5AM"}
 }
 
 def detect_anomalies(
@@ -13,6 +14,7 @@ def detect_anomalies(
 ) -> List[Dict[str, Any]]:
     anoms = []
     ts_list = [datetime.fromisoformat(ev["timestamp"]) for ev in events]
+    cnt_logins = 0
     for ev in events:
         t = ev.get("tipo")
         info = ev.get("info", {})
@@ -29,4 +31,15 @@ def detect_anomalies(
         cnt = sum(1 for x in ts_list if ts - window <= x <= ts)
         if cnt > wf["count"]:
             anoms.append({"rule":"high_frequency","evento":ev})
+        hour = ts.hour
+        if 0 <= hour <= 5:
+            anoms.append({"rule":"strange_moment_activity", "evento":ev})
+        if ev.get("tipo") == "login":
+            cnt_logins+=1
+            hF = False
+            for anom in anoms :
+                if anom == {"rule":"high_frequency", "evento":ev}:
+                    hF = True
+            if cnt_logins > 5 and hF:
+                anoms.append({"rule":"brute_force", "evento":ev})
     return anoms

@@ -13,3 +13,9 @@ PyJWT>=2.0.0
 psutil
 prometheus-client
 python-dotenv>=1.0.0
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+seaborn
