@@ -178,16 +178,27 @@ def _collect_resources():
 
 threading.Thread(target=_collect_resources, daemon=True).start()
 
-def publish_balance_update(username: str, balance: float, operation_type: str, amount: float):
+def publish_balance_update(
+    username: str,
+    balance: float,
+    operation_type: str,
+    amount: float,
+    to_user: Optional[str] = None
+):
     if not mqtt_client_global:
         return
     ev = {
         "timestamp": datetime.utcnow().isoformat(),
         "tipo": operation_type,
-        "info": {"user": username, "amount": amount, "balance": balance},
+        "info": {
+            "user": username,
+            "amount": amount,
+            "balance": balance,
+            "to_user": to_user,
+        },
         "descricao": f"{username} -> {operation_type} de {amount}, novo saldo={balance}",
     }
-    mqtt_client_global.publish(f"banco/{username}/events", json.dumps(ev), qos=1)
+    mqtt_client_global.publish("digital_twin/balance", json.dumps(ev), qos=1)
 
 # ---------- Banco de dados ----------
 engine_kwargs: dict[str, Any] = {}
@@ -307,6 +318,7 @@ class DigitalTwinHandler(logging.Handler):
                 "user": getattr(record, "user", None),
                 "amount": getattr(record, "amount", None),
                 "to_user": getattr(record, "to_user", None),
+                "balance": getattr(record, "balance", None),
             },
             "descricao": f"{getattr(record, 'user', '')} fez {record.getMessage()}"
         }
@@ -320,14 +332,10 @@ class DigitalTwinHandler(logging.Handler):
         MESSAGES_PROCESSED.inc()
 
         if anoms and mqtt_client_global:
-            mqtt_client_global.publish("banco/anomalies", json.dumps(anoms[-1]), qos=0)
+            mqtt_client_global.publish("digital_twin/anomalies", json.dumps(anoms[-1]), qos=0)
 
         if mqtt_client_global:
-            mqtt_client_global.publish(
-                f"banco/{ev['info'].get('user','anon')}/events",
-                json.dumps(ev),
-                qos=1
-            )
+            mqtt_client_global.publish("digital_twin/operation", json.dumps(ev), qos=1)
 
 logger = logging.getLogger("myapp")
 logger.setLevel(logging.INFO)
@@ -437,7 +445,15 @@ def get_balance(
 ):
     db.add(Log(user_id=current_user.id, action="balance", timestamp=datetime.utcnow()))
     db.commit()
-    logger.info("balance", extra={"user": current_user.username, "action": "balance"})
+    logger.info(
+        "balance",
+        extra={
+            "user": current_user.username,
+            "action": "balance",
+            "balance": current_user.balance,
+        }
+    )
+    publish_balance_update(current_user.username, current_user.balance, "balance", 0.0)
     return {"balance": current_user.balance}
 
 @app.post("/deposit")
@@ -470,7 +486,7 @@ def deposit(
         )
         logger.info(
             "deposit",
-            extra={"user": user.username, "amount": req.amount}
+            extra={"user": user.username, "amount": req.amount, "balance": user.balance}
         )
         return {"balance": user.balance}
 
@@ -508,14 +524,27 @@ def pix(
         db.commit()
         sender = db.query(User).filter(User.id == sender.id).first()
         recipient = db.query(User).filter(User.id == recipient.id).first()
-        publish_balance_update(sender.username, sender.balance, "pix_sent", req.amount)
-        publish_balance_update(recipient.username, recipient.balance, "pix_received", req.amount)
+        publish_balance_update(
+            sender.username,
+            sender.balance,
+            "pix_sent",
+            req.amount,
+            to_user=recipient.username
+        )
+        publish_balance_update(
+            recipient.username,
+            recipient.balance,
+            "pix_received",
+            req.amount,
+            to_user=sender.username
+        )
         logger.info(
             "pix",
             extra={
                 "user": sender.username,
                 "to_user": recipient.username,
-                "amount": req.amount
+                "amount": req.amount,
+                "balance": sender.balance
             }
         )
         return {"balance": sender.balance}
@@ -571,7 +600,10 @@ def twin_anomalies(user: Optional[str] = None):
 
 # --- Admin endpoints ---
 @app.post("/admin/tests/integration")
-async def admin_tests_integration(current_user: User = Depends(get_current_user)):
+def admin_tests_integration(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Executa testes de integração (apenas para admin)"""
     if current_user.username != "admin":
         raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")

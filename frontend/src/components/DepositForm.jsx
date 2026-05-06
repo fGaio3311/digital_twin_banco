@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { deposit }  from '../api'
 
-export default function DepositForm() {
+export default function DepositForm({ onDone }) {
   const [amount, setAmount]   = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -14,6 +14,9 @@ export default function DepositForm() {
       setSuccess(`Depósito realizado! Novo saldo: ${newBalance}`)
       setAmount('')
       setError('')
+      if (onDone) {
+        onDone()
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao fazer depósito')
       setSuccess('')

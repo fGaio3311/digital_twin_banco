@@ -12,11 +12,9 @@ api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('Token enviado:', token);
   }
   return config;
 }, error => {
-  console.error('Erro no interceptor de request:', error);
   return Promise.reject(error);
 });
 
@@ -26,7 +24,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token'); // limpa token se expirado
     }
-    console.error('Erro na resposta:', error);
     throw error;
   }
 );

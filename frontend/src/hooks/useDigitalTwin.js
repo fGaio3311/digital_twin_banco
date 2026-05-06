@@ -11,7 +11,10 @@ export function useDigitalTwin() {
 
     // Subscribe aos tópicos relevantes
     const balanceHandler = (data) => {
-      setBalance(data.balance);
+      const nextBalance = data?.info?.balance ?? data?.balance ?? null;
+      if (typeof nextBalance === 'number') {
+        setBalance(nextBalance);
+      }
       setLastOperation(data);
     };
 
@@ -24,5 +27,5 @@ export function useDigitalTwin() {
     };
   }, []);
 
-  return { balance, lastOperation };
+  return { balance, lastOperation, setBalance, setLastOperation };
 }

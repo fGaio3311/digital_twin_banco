@@ -10,14 +10,17 @@ class MQTTService {
     this.client = mqtt.connect('ws://localhost:9001'); // WebSocket port do Mosquitto
 
     this.client.on('connect', () => {
-      console.log('Conectado ao MQTT broker');
       this.client.subscribe('digital_twin/#');
     });
 
     this.client.on('message', (topic, message) => {
       const handlers = this.handlers.get(topic) || [];
-      const payload = JSON.parse(message.toString());
-      handlers.forEach(handler => handler(payload));
+      try {
+        const payload = JSON.parse(message.toString());
+        handlers.forEach(handler => handler(payload));
+      } catch (error) {
+        // Ignora payload inválido para evitar queda do app
+      }
     });
   }
 

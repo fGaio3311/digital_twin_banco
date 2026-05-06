@@ -6,15 +6,17 @@ import PixForm from './PixForm'
 import { useDigitalTwin } from '../hooks/useDigitalTwin'
 
 export default function Dashboard() {
-  const { balance, lastOperation } = useDigitalTwin()
+  const { balance, lastOperation, setBalance } = useDigitalTwin()
   const [error, setError] = useState(null)
 
   const load = async () => {
     try {
       setError(null)
-      await getBalance() // Removido setBalance
+      const currentBalance = await getBalance()
+      if (typeof currentBalance === 'number') {
+        setBalance(currentBalance)
+      }
     } catch (err) {
-      console.error('Erro ao carregar saldo:', err)
       if (err.response?.status === 401) {
         setError('Sessão expirada. Por favor, faça login novamente.')
       } else if (err.message.includes('CORS')) {
@@ -69,9 +71,9 @@ export default function Dashboard() {
       {lastOperation && (
         <div className="bg-gray-100 p-4 rounded mb-4">
           <h3 className="font-bold">Última operação</h3>
-          <p>Tipo: {lastOperation.type}</p>
-          <p>Valor: R$ {lastOperation.value}</p>
-          <p>Data: {new Date(lastOperation.date).toLocaleString()}</p>
+          <p>Tipo: {lastOperation.tipo || lastOperation.type}</p>
+          <p>Valor: R$ {lastOperation.info?.amount ?? lastOperation.value}</p>
+          <p>Data: {new Date(lastOperation.timestamp || lastOperation.date).toLocaleString()}</p>
         </div>
       )}
 

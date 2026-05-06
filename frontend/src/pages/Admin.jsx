@@ -16,7 +16,6 @@ export default function Admin() {
       })
       setTestResults(response.data.results || [])
     } catch (error) {
-      console.error('Erro ao executar testes:', error)
       alert('Erro ao executar testes de integração')
     } finally {
       setLoading(false)
@@ -48,10 +47,8 @@ export default function Admin() {
   const getMetrics = async () => {
     try {
       const response = await axios.get(`${API_URL}/metrics`)
-      console.log('Métricas:', response.data)
-      alert('Métricas obtidas com sucesso. Verifique o console.')
+      alert('Métricas obtidas com sucesso.')
     } catch (error) {
-      console.error('Erro ao obter métricas:', error)
       alert('Erro ao obter métricas')
     }
   }
