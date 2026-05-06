@@ -1,5 +1,5 @@
 import json
-from typing import Any, Iterable
+from typing import Any, Iterable, Union
 
 
 def _parse_json_lines(text: str) -> Iterable[dict[str, Any]]:
@@ -19,7 +19,7 @@ def _parse_json_lines(text: str) -> Iterable[dict[str, Any]]:
                     yield item
 
 
-def process_logs_file(content: bytes | str) -> list[dict[str, Any]]:
+def process_logs_file(content: Union[bytes, str]) -> list[dict[str, Any]]:
     if isinstance(content, bytes):
         text = content.decode("utf-8", errors="ignore")
     else:

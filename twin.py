@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 
-def _to_dt(ts: str | datetime) -> datetime:
+def _to_dt(ts: Any) -> datetime:
     if isinstance(ts, datetime):
         return ts
     return datetime.fromisoformat(ts)
@@ -95,43 +95,38 @@ class DigitalTwin:
         u["counters"][tipo] += 1
         u["last_event_ts"] = _to_dt(ts) if (u["last_event_ts"] is None or _to_dt(ts) > u["last_event_ts"]) else u["last_event_ts"]
 
-        match tipo:
-            case "login":
-                u["n_logins"] += 1
-                u["login_times"].append(ts)
+        if tipo == "login":
+            u["n_logins"] += 1
+            u["login_times"].append(ts)
+        elif tipo == "balance":
+            u["n_saldo"] += 1
+            # saldo pode vir em info["balance"] (se desejar refletir)
+            if "balance" in info:
+                u["saldo"] = float(info["balance"])
+        elif tipo == "deposit":
+            valor = float(info.get("amount", 0.0))
+            u["n_depositos"] += 1
+            u["total_depositado"] += valor
+            u["saldo"] += valor
+            u["pix_valores"].append(valor)
+        elif tipo in ("pix", "pix_sent"):
+            valor = float(info.get("amount", 0.0))
+            to_user = info.get("to_user")
+            u["n_pix"] += 1
+            u["total_pix_enviado"] += valor
+            u["saldo"] -= valor
+            u["pix_valores"].append(valor)
 
-            case "balance":
-                u["n_saldo"] += 1
-                # saldo pode vir em info["balance"] (se desejar refletir)
-                if "balance" in info:
-                    u["saldo"] = float(info["balance"])
-
-            case "deposit":
-                valor = float(info.get("amount", 0.0))
-                u["n_depositos"] += 1
-                u["total_depositado"] += valor
-                u["saldo"] += valor
-                u["pix_valores"].append(valor)
-
-            case "pix" | "pix_sent":
-                valor = float(info.get("amount", 0.0))
-                to_user = info.get("to_user")
-                u["n_pix"] += 1
-                u["total_pix_enviado"] += valor
-                u["saldo"] -= valor
-                u["pix_valores"].append(valor)
-
-                # Atualiza destinatário (se existir)
-                if to_user:
-                    r = self.users[to_user]
-                    r["total_pix_recebido"] += valor
-                    r["saldo"] += valor
-                    r["pix_valores"].append(valor)
-                    r["counters"]["pix_received"] += 1
-
-            case _:
-                # Outros tipos: só incrementa contadores e guarda evento
-                pass
+            # Atualiza destinatário (se existir)
+            if to_user:
+                r = self.users[to_user]
+                r["total_pix_recebido"] += valor
+                r["saldo"] += valor
+                r["pix_valores"].append(valor)
+                r["counters"]["pix_received"] += 1
+        else:
+            # Outros tipos: só incrementa contadores e guarda evento
+            pass
 
     # ------------------ Consultas ------------------
     def get_shadow(self, username: str) -> Dict[str, Any]:
@@ -222,7 +217,7 @@ class DigitalTwin:
             return u["eventos"] if u else []
         return self.eventos
 
-    def anomalies(self, username: str | None = None) -> list[dict[str, Any]]:
+    def anomalies(self, username: Optional[str] = None) -> List[Dict[str, Any]]:
         if username:
             evs = self.users.get(username, {}).get("eventos", [])
         else:
@@ -230,13 +225,13 @@ class DigitalTwin:
         return detect_anomalies(evs, DEFAULT_RULES)
 
     # ------------------ Model integration ------------------
-    def load_usage_model(self, path: str | Path) -> None:
+    def load_usage_model(self, path: str) -> None:
         p = Path(path)
         if not p.exists():
             raise FileNotFoundError(f"Model file not found: {p}")
         self._usage_model = joblib.load(p)
 
-    def predict_user_last_session(self, username: str, session_gap_minutes: int = 30) -> dict[str, Any] | None:
+    def predict_user_last_session(self, username: str, session_gap_minutes: int = 30) -> Optional[Dict[str, Any]]:
         """Build features for the user's last session and predict duration (minutes).
         Returns a dict with `features`, `predicted_duration_min` and `model_info`.
         """
