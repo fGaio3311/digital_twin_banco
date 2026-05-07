@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, Optional, Union
+
+from pydantic import BaseModel, Field, validator
+
 
 class TipoEvento(str, Enum):
     deposit = "deposit"
@@ -11,44 +13,57 @@ class TipoEvento(str, Enum):
     login = "login"
     balance = "balance"
     code_analysis = "code_analysis"
+    http_request = "http_request"
+    security_alert = "security_alert"
+
 
 class EventInfo(BaseModel):
-    user: Optional[str]
-    amount: Optional[float]
-    to_user: Optional[str]
-    balance: Optional[float]
+    user: Optional[str] = None
+    amount: Optional[float] = None
+    to_user: Optional[str] = None
+    balance: Optional[float] = None
+    ip: Optional[str] = None
+    geo: Optional[str] = None
+    endpoint: Optional[str] = None
+    method: Optional[str] = None
+    status: Optional[int] = None
+    latency_ms: Optional[float] = None
+    payload: Optional[str] = None
 
-    @validator('amount', 'balance', pre=True)
-    def coerce_amount(cls, v):
+    @validator("amount", "balance", pre=True)
+    def coerce_amount(cls, v: object) -> Optional[float]:
         if v is None or v == "":
             return None
-        try:
-            return float(v)
-        except Exception:
-            raise ValueError('amount/balance must be numeric')
+        if isinstance(v, (str, int, float)):
+            try:
+                return float(v)
+            except ValueError:
+                raise ValueError("amount/balance must be numeric")
+        raise ValueError("amount/balance must be numeric")
+
 
 class Event(BaseModel):
-    timestamp: Optional[datetime] = None
-    tipo: TipoEvento
-    info: Optional[EventInfo] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    tipo: Union[TipoEvento, str]
+    info: Union[EventInfo, Dict[str, Any]] = Field(default_factory=EventInfo)
     descricao: Optional[str] = None
 
-    @validator('timestamp', pre=True, always=True)
-    def parse_ts(cls, v):
+    @validator("timestamp", pre=True)
+    def parse_ts(cls, v: object) -> datetime:
         if v is None:
             return datetime.utcnow()
         if isinstance(v, datetime):
             return v
-        try:
-            return datetime.fromisoformat(v)
-        except Exception:
-            raise ValueError('timestamp must be ISO datetime')
+        if isinstance(v, str):
+            try:
+                return datetime.fromisoformat(v)
+            except ValueError:
+                raise ValueError("timestamp must be ISO datetime")
+        raise ValueError("timestamp must be ISO datetime")
 
     def to_dict(self) -> Dict[str, Any]:
         d = self.dict()
-        # serialize timestamp to isoformat for downstream code
-        d['timestamp'] = d['timestamp'].isoformat() if d.get('timestamp') else None
-        # ensure info uses plain dict
-        if isinstance(d.get('info'), EventInfo):
-            d['info'] = d['info'].dict()
+        d["timestamp"] = d["timestamp"].isoformat() if d.get("timestamp") else None
+        if isinstance(d.get("tipo"), Enum):
+            d["tipo"] = d["tipo"].value
         return d

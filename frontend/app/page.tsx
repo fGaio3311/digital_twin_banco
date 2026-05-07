@@ -1,19 +1,15 @@
-import { Suspense } from 'react';
+export const dynamic = "force-dynamic";
+
+const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function fetchHealth() {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-  const res = await fetch(`${base}/health`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Health check failed');
+  const res = await fetch(`${base}/health`, { cache: "no-store" });
+  if (!res.ok) return null;
   return res.json();
 }
 
-export default async function Home() {
-  let health: { status?: string; time?: string } | null = null;
-  try {
-    health = await fetchHealth();
-  } catch {
-    health = null;
-  }
+export default async function RootPage() {
+  const health = await fetchHealth();
 
   return (
     <main className="page">
@@ -25,8 +21,8 @@ export default async function Home() {
             Centralize ativos, vulnerabilidades e anomalias em tempo real com um painel moderno e auditável.
           </p>
           <div className="actions">
-            <a className="btn primary" href="/docs">Abrir API Docs</a>
-            <a className="btn ghost" href="/digital-twin/summary">Resumo do Twin</a>
+            <a className="btn primary" href="/dashboard">Abrir painel</a>
+            <a className="btn ghost" href="/simulations">Simulação de ameaças</a>
           </div>
         </div>
         <div className="hero__card">
@@ -35,14 +31,14 @@ export default async function Home() {
             <div className="grid">
               <div>
                 <p className="label">Status</p>
-                <p className={`value ${health ? 'ok' : 'bad'}`}>
-                  {health?.status ?? 'offline'}
+                <p className={`value ${health ? "ok" : "bad"}`}>
+                  {health?.status ?? "offline"}
                 </p>
               </div>
               <div>
                 <p className="label">Último ping</p>
                 <p className="value">
-                  {health?.time ? new Date(health.time).toLocaleString() : '--'}
+                  {health?.time ? new Date(health.time).toLocaleString() : "--"}
                 </p>
               </div>
               <div>
@@ -70,6 +66,11 @@ export default async function Home() {
             <a href="/anomalies">Ver anomalias</a>
           </div>
           <div className="card">
+            <h3>Painel de Mitigação</h3>
+            <p>Alertas e risco em tempo real.</p>
+            <a href="/dashboard">Abrir painel</a>
+          </div>
+          <div className="card">
             <h3>Resumo operacional</h3>
             <p>Indicadores agregados por usuário e por tipo de evento.</p>
             <a href="/summary">Abrir resumo</a>
@@ -83,6 +84,11 @@ export default async function Home() {
             <h3>Visão geral</h3>
             <p>Totais e contadores do gêmeo digital.</p>
             <a href="/overview">Abrir visão geral</a>
+          </div>
+          <div className="card">
+            <h3>Sala de Simulação</h3>
+            <p>Dispare cenários de ameaça em 1 clique.</p>
+            <a href="/simulations">Abrir simulações</a>
           </div>
         </div>
       </section>

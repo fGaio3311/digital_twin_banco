@@ -1,14 +1,16 @@
 # digital_twin/twin.py
 from __future__ import annotations
-from app.domain.anomaly_detection import detect_anomalies, DEFAULT_RULES
+
+from collections import Counter, defaultdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import joblib
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
-from collections import defaultdict, Counter
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+from app.domain.anomaly_detection import DEFAULT_RULES, detect_anomalies, score_event
 
 
 def _to_dt(ts: Any) -> datetime:
@@ -25,24 +27,29 @@ class DigitalTwin:
 
     def __init__(self):
         # estado agregado por usuário
-        self.users: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
-            "saldo": 0.0,
-            "n_logins": 0,
-            "n_saldo": 0,
-            "n_depositos": 0,
-            "n_pix": 0,
-            "total_depositado": 0.0,
-            "total_pix_enviado": 0.0,
-            "total_pix_recebido": 0.0,
-            "eventos": [],           # eventos brutos (shadow)
-            "login_times": [],
-            "pix_valores": [],
-            "last_event_ts": None,   # datetime
-            "counters": Counter(),   # contagem genérica por tipo
-        })
+        self.users: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "saldo": 0.0,
+                "n_logins": 0,
+                "n_saldo": 0,
+                "n_depositos": 0,
+                "n_pix": 0,
+                "total_depositado": 0.0,
+                "total_pix_enviado": 0.0,
+                "total_pix_recebido": 0.0,
+                "eventos": [],  # eventos brutos (shadow)
+                "login_times": [],
+                "pix_valores": [],
+                "last_event_ts": None,  # datetime
+                "counters": Counter(),  # contagem genérica por tipo
+            }
+        )
 
         # eventos globais p/ stats/sazonalidade
         self.eventos: List[Dict[str, Any]] = []
+
+        # alertas de risco agregados
+        self.alerts: List[Dict[str, Any]] = []
 
         # bucket especial para code_analysis, logs de pre-commit, etc.
         self.users["precommit"] = {"eventos": []}
@@ -95,7 +102,11 @@ class DigitalTwin:
         u = self.users[user]
         u["eventos"].append(event)
         u["counters"][tipo] += 1
-        u["last_event_ts"] = _to_dt(ts) if (u["last_event_ts"] is None or _to_dt(ts) > u["last_event_ts"]) else u["last_event_ts"]
+        u["last_event_ts"] = (
+            _to_dt(ts)
+            if (u["last_event_ts"] is None or _to_dt(ts) > u["last_event_ts"])
+            else u["last_event_ts"]
+        )
 
         if tipo == "login":
             u["n_logins"] += 1
@@ -139,6 +150,35 @@ class DigitalTwin:
             # Outros tipos: só incrementa contadores e guarda evento
             pass
 
+        # Avaliação de risco e alertas
+        try:
+            scoring = score_event(event, u["eventos"])
+            event["risk_score"] = scoring["score"]
+            event["risk_details"] = {
+                "velocity_score": scoring["velocity_score"],
+                "ueba_score": scoring["ueba_score"],
+                "amount_score": scoring.get("amount_score", 0.0),
+                "payload_score": scoring["payload_score"],
+                "payload_hits": scoring["payload_hits"],
+                "geo_score": scoring.get("geo_score", 0.0),
+                "error_score": scoring.get("error_score", 0.0),
+                "exfil_score": scoring.get("exfil_score", 0.0),
+            }
+            if scoring["score"] >= 70:
+                self.alerts.append(
+                    {
+                        "timestamp": event["timestamp"],
+                        "user": user,
+                        "tipo": tipo,
+                        "risk_score": scoring["score"],
+                        "details": event.get("risk_details", {}),
+                        "descricao": event.get("descricao"),
+                    }
+                )
+        except Exception:
+            # não bloquear fluxo se scoring falhar
+            pass
+
     # ------------------ Consultas ------------------
     def get_shadow(self, username: str) -> Dict[str, Any]:
         u = self.users.get(username)
@@ -147,7 +187,9 @@ class DigitalTwin:
         return {
             "username": username,
             "saldo": u["saldo"],
-            "last_event_ts": u["last_event_ts"].isoformat() if u["last_event_ts"] else None,
+            "last_event_ts": u["last_event_ts"].isoformat()
+            if u["last_event_ts"]
+            else None,
             "n_logins": u["n_logins"],
             "n_depositos": u["n_depositos"],
             "n_pix": u["n_pix"],
@@ -157,6 +199,7 @@ class DigitalTwin:
             "counters": dict(u["counters"]),
             "eventos": u["eventos"],  # último N
         }
+
     def get_janela_de_logins(self):
         # Retorna os eventos do tipo 'login' em janela agregada (global)
         return [ev for ev in self.eventos if ev.get("tipo") == "login"]
@@ -198,12 +241,12 @@ class DigitalTwin:
             "sum_by_type": dict(sums),
             "avg_by_type": avg,
             "total_events": len(self.eventos),
-            "total_users": len([u for u in self.users if u != 'precommit']),
+            "total_users": len([u for u in self.users if u != "precommit"]),
         }
 
     def sazonalidade(self) -> Dict[str, Any]:
         by_hour = Counter()
-        by_weekday = Counter()   # 0 = Monday
+        by_weekday = Counter()  # 0 = Monday
         by_month = Counter()
 
         for ev in self.eventos:
@@ -236,6 +279,9 @@ class DigitalTwin:
             evs = self.eventos
         return detect_anomalies(evs, DEFAULT_RULES)
 
+    def get_alerts(self, limit: int = 50) -> List[Dict[str, Any]]:
+        return self.alerts[-limit:]
+
     # ------------------ Model integration ------------------
     def load_usage_model(self, path: str) -> None:
         p = Path(path)
@@ -243,12 +289,16 @@ class DigitalTwin:
             raise FileNotFoundError(f"Model file not found: {p}")
         self._usage_model = joblib.load(p)
 
-    def predict_user_last_session(self, username: str, session_gap_minutes: int = 30) -> Optional[Dict[str, Any]]:
+    def predict_user_last_session(
+        self, username: str, session_gap_minutes: int = 30
+    ) -> Optional[Dict[str, Any]]:
         """Build features for the user's last session and predict duration (minutes).
         Returns a dict with `features`, `predicted_duration_min` and `model_info`.
         """
         if self._usage_model is None:
-            raise RuntimeError("Usage model not loaded. Call load_usage_model(path) first.")
+            raise RuntimeError(
+                "Usage model not loaded. Call load_usage_model(path) first."
+            )
 
         u = self.users.get(username)
         if not u:
@@ -286,14 +336,18 @@ class DigitalTwin:
         endpoints = [e.get("endpoint") for e in last_session]
         successes = [bool(e.get("success", True)) for e in last_session]
         start = last_session[0]["_dt"]
-        duration_min = max(0.0, (last_session[-1]["_dt"] - start).total_seconds() / 60.0)
+        duration_min = max(
+            0.0, (last_session[-1]["_dt"] - start).total_seconds() / 60.0
+        )
 
         feat = {
             "num_requests": len(last_session),
             "mean_latency_ms": float(np.mean(latencies)) if latencies else 0.0,
             "median_latency_ms": float(np.median(latencies)) if latencies else 0.0,
             "std_latency_ms": float(np.std(latencies)) if latencies else 0.0,
-            "error_rate": float(1.0 - sum(1 for s in successes if s) / len(successes)) if successes else 0.0,
+            "error_rate": float(1.0 - sum(1 for s in successes if s) / len(successes))
+            if successes
+            else 0.0,
             "unique_endpoints": len(set(endpoints)),
             "start_hour": start.hour,
             "day_of_week": start.weekday(),
@@ -302,4 +356,8 @@ class DigitalTwin:
         X = pd.DataFrame([feat])[self._usage_model_features].astype(float)
         pred = float(self._usage_model.predict(X)[0])
 
-        return {"features": feat, "predicted_duration_min": pred, "actual_duration_min": duration_min}
+        return {
+            "features": feat,
+            "predicted_duration_min": pred,
+            "actual_duration_min": duration_min,
+        }
