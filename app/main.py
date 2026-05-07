@@ -302,9 +302,33 @@ class LogOut(BaseModel):
 # ---------- Digital Twin + Logger ----------
 twin = DigitalTwin()
 
+def process_event(evt: Event) -> None:
+    ev = evt.to_dict()
+    start = time.monotonic()
+    twin.apply_event(ev)
+    anoms = twin.anomalies(ev["info"].get("user"))
+    elapsed = time.monotonic() - start
+
+    PROCESS_LATENCY.observe(elapsed)
+    MESSAGES_PROCESSED.inc()
+
+    if anoms:
+        try:
+            mqtt_service.publish_anomaly(anoms[-1])
+        except Exception:
+            logging.exception("Failed to publish anomaly")
+
+    try:
+        mqtt_service.publish_operation(ev)
+    except Exception:
+        logging.exception("Failed to publish operation event")
+
+
 class DigitalTwinHandler(logging.Handler):
     def emit(self, record):
         if record.getMessage() == "anomaly":
+            return
+        if getattr(record, "skip_twin", False):
             return
 
         # Build and validate event using Pydantic
@@ -324,26 +348,7 @@ class DigitalTwinHandler(logging.Handler):
             logging.exception("Invalid event from log record")
             return
 
-        ev = evt.to_dict()
-
-        start = time.monotonic()
-        twin.apply_event(ev)
-        anoms = twin.anomalies(ev["info"].get("user"))
-        elapsed = time.monotonic() - start
-
-        PROCESS_LATENCY.observe(elapsed)
-        MESSAGES_PROCESSED.inc()
-
-        if anoms:
-            try:
-                mqtt_service.publish_anomaly(anoms[-1])
-            except Exception:
-                logging.exception("Failed to publish anomaly")
-
-        try:
-            mqtt_service.publish_operation(ev)
-        except Exception:
-            logging.exception("Failed to publish operation event")
+        process_event(evt)
 
 logger = logging.getLogger("myapp")
 logger.setLevel(logging.INFO)
@@ -405,7 +410,7 @@ async def upload_logs(file: UploadFile = File(...), db: Session = Depends(get_db
     for raw in events:
         try:
             evt = Event.parse_obj(raw)
-            twin.apply_event(evt.to_dict())
+            process_event(evt)
         except Exception:
             logging.exception("Skipped invalid event during upload")
     return {"imported": len(events)}
@@ -447,7 +452,18 @@ async def login(
         token = create_access_token({"sub": user.username})
         db.add(Log(user_id=user.id, action="login", timestamp=datetime.utcnow()))
         db.commit()
-        logger.info("login", extra={"user": user.username, "action": "login"})
+        # Ingest event via validated schema
+        try:
+            evt = Event(
+                timestamp=datetime.utcnow(),
+                tipo="login",
+                info={"user": user.username},
+                descricao=f"{user.username} fez login"
+            )
+            process_event(evt)
+        except Exception:
+            logging.exception("Failed to process login event")
+        logger.info("login", extra={"user": user.username, "action": "login", "skip_twin": True})
         return {"access_token": token, "token_type": "bearer"}
 
 @app.get("/balance")
@@ -457,12 +473,23 @@ def get_balance(
 ):
     db.add(Log(user_id=current_user.id, action="balance", timestamp=datetime.utcnow()))
     db.commit()
+    try:
+        evt = Event(
+            timestamp=datetime.utcnow(),
+            tipo="balance",
+            info={"user": current_user.username, "balance": current_user.balance},
+            descricao=f"{current_user.username} consultou saldo"
+        )
+        process_event(evt)
+    except Exception:
+        logging.exception("Failed to process balance event")
     logger.info(
         "balance",
         extra={
             "user": current_user.username,
             "action": "balance",
             "balance": current_user.balance,
+            "skip_twin": True,
         }
     )
     publish_balance_update(current_user.username, current_user.balance, "balance", 0.0)
@@ -496,9 +523,19 @@ def deposit(
             "deposit",
             req.amount
         )
+        try:
+            evt = Event(
+                timestamp=datetime.utcnow(),
+                tipo="deposit",
+                info={"user": user.username, "amount": req.amount, "balance": user.balance},
+                descricao=f"{user.username} depositou {req.amount}"
+            )
+            process_event(evt)
+        except Exception:
+            logging.exception("Failed to process deposit event")
         logger.info(
             "deposit",
-            extra={"user": user.username, "amount": req.amount, "balance": user.balance}
+            extra={"user": user.username, "amount": req.amount, "balance": user.balance, "skip_twin": True}
         )
         return {"balance": user.balance}
 
@@ -550,13 +587,31 @@ def pix(
             req.amount,
             to_user=sender.username
         )
+        try:
+            evt_sender = Event(
+                timestamp=datetime.utcnow(),
+                tipo="pix_sent",
+                info={"user": sender.username, "to_user": recipient.username, "amount": req.amount, "balance": sender.balance},
+                descricao=f"{sender.username} enviou PIX para {recipient.username}"
+            )
+            evt_recipient = Event(
+                timestamp=datetime.utcnow(),
+                tipo="pix_received",
+                info={"user": recipient.username, "to_user": sender.username, "amount": req.amount, "balance": recipient.balance},
+                descricao=f"{recipient.username} recebeu PIX de {sender.username}"
+            )
+            process_event(evt_sender)
+            process_event(evt_recipient)
+        except Exception:
+            logging.exception("Failed to process pix event")
         logger.info(
             "pix",
             extra={
                 "user": sender.username,
                 "to_user": recipient.username,
                 "amount": req.amount,
-                "balance": sender.balance
+                "balance": sender.balance,
+                "skip_twin": True,
             }
         )
         return {"balance": sender.balance}

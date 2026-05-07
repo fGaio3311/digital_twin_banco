@@ -75,7 +75,9 @@ class DigitalTwin:
         event["timestamp"] = ts
 
         tipo = event.get("tipo")
-        info = event.get("info", {})
+        info = event.get("info") or {}
+        if not isinstance(info, dict):
+            info = {}
         user = info.get("user")
 
         # Guarda global
@@ -102,15 +104,24 @@ class DigitalTwin:
             u["n_saldo"] += 1
             # saldo pode vir em info["balance"] (se desejar refletir)
             if "balance" in info:
-                u["saldo"] = float(info["balance"])
+                try:
+                    u["saldo"] = float(info["balance"])
+                except (TypeError, ValueError):
+                    pass
         elif tipo == "deposit":
-            valor = float(info.get("amount", 0.0))
+            try:
+                valor = float(info.get("amount", 0.0))
+            except (TypeError, ValueError):
+                valor = 0.0
             u["n_depositos"] += 1
             u["total_depositado"] += valor
             u["saldo"] += valor
             u["pix_valores"].append(valor)
         elif tipo in ("pix", "pix_sent"):
-            valor = float(info.get("amount", 0.0))
+            try:
+                valor = float(info.get("amount", 0.0))
+            except (TypeError, ValueError):
+                valor = 0.0
             to_user = info.get("to_user")
             u["n_pix"] += 1
             u["total_pix_enviado"] += valor
