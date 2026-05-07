@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: digital-twin-api
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
@@ -55,20 +55,18 @@ services:
           cpus: '2'
           memory: 1G
 
-  # Frontend React (TypeScript)
+  # Frontend Next.js
   frontend:
     build:
-      context: ./frontend_new
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: digital-twin-frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_MQTT_URL=ws://localhost:9001
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - api
-      - mqtt-broker
     restart: unless-stopped
 
   # MQTT Broker
@@ -79,7 +77,7 @@ services:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./app/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     deploy:
@@ -94,34 +92,6 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # MQTT Subscriber para monitoramento
-  mqtt-subscriber:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: mqtt-subscriber
-    command: python mqtt_subscriber.py
-    environment:
-      - MQTT_BROKER_HOST=mqtt-broker
-      - MQTT_BROKER_PORT=1883
-    depends_on:
-      - mqtt-broker
-      - api
-    restart: unless-stopped
-
-  # Nginx para proxy reverso (opcional)
-  nginx:
-    image: nginx:alpine
-    container_name: digital-twin-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api
-      - frontend
-    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -16,6 +16,7 @@ from fastapi import (
     FastAPI, Depends, HTTPException,
     status, Request, Response, UploadFile, File
 )
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -745,11 +746,17 @@ def admin_dashboard_stats(current_user: User = Depends(get_current_user), db: Se
         "timestamp": datetime.utcnow().isoformat()
     }
 
-# Servir frontend estático
+# Root redirection to frontend (Next.js)
+@app.get("/")
+def root():
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    return RedirectResponse(frontend_url)
+
+# Servir frontend estático (fallback) em /static
 from pathlib import Path
 frontend_path = Path(__file__).parent / "frontend" / "build"
 if frontend_path.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_path), html=True), name="static")
+    app.mount("/static", StaticFiles(directory=str(frontend_path), html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

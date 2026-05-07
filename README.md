@@ -1,6 +1,6 @@
 # Bank Simulator with Digital Twin – README
 
-> **Stack principal**: FastAPI · SQLAlchemy · PostgreSQL · MQTT (Eclipse Mosquitto) · Digital Twin (Python) · Pytest
+> **Stack principal**: FastAPI · SQLAlchemy · PostgreSQL · MQTT (Eclipse Mosquitto) · Digital Twin (Python) · Next.js · Pytest
 
 ## 📑 Sumário
 
@@ -12,7 +12,8 @@
 
    * [Docker Compose](#docker-compose)
    * [Execução Local (sem Docker)](#execução-local-sem-docker)
-6. [Segurança e Scans](#segurança-e-scans)
+6. [Frontend (Next.js)](#frontend-nextjs)
+7. [Segurança e Scans](#segurança-e-scans)
 7. [Endpoints Principais da API](#endpoints-principais-da-api)
 8. [Digital Twin – Funcionalidades](#digital-twin--funcionalidades)
 9. [Testes Automatizados](#testes-automatizados)
@@ -150,6 +151,12 @@ REACT_APP_API_URL=http://localhost:8000
 
    ```bash
    curl http://localhost:8000/health
+
+4. **Frontend Next.js**
+
+   ```bash
+   open http://localhost:3000
+   ```
    ```
 
 ### Execução Local (sem Docker)
@@ -166,6 +173,25 @@ REACT_APP_API_URL=http://localhost:8000
 
    ```bash
    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   4. Execute o frontend:
+
+      ```bash
+      cd frontend
+      npm install
+      npm run dev
+      ```
+
+   ---
+
+   ## Frontend (Next.js)
+
+   O frontend Next.js fica em `frontend/` e consome a API via `NEXT_PUBLIC_API_URL`.
+
+   Exemplo:
+
+   ```bash
+   export NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
    ```
 ---
 
