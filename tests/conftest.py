@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import main  # certifica-se de que main já veja TESTING="1"
 from main import app, get_db
-from models import Base
+from app.models.models import Base
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 

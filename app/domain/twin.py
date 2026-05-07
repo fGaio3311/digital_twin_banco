@@ -1,6 +1,6 @@
 # digital_twin/twin.py
 from __future__ import annotations
-from anomaly_detection import detect_anomalies, DEFAULT_RULES
+from app.domain.anomaly_detection import detect_anomalies, DEFAULT_RULES
 import joblib
 import numpy as np
 import pandas as pd

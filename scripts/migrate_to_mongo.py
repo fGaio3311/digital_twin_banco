@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from pymongo import MongoClient
 from app.settings import Settings
-from models import User, Transaction, Log, Base
+from app.models.models import User, Transaction, Log, Base
 from datetime import datetime
 from bson import ObjectId
 

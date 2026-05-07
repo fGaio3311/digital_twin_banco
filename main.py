@@ -31,9 +31,9 @@ from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTEN
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # imports locais
-from models import Base, User, Log, Transaction
+from app.models.models import Base, User, Log, Transaction
 from app.settings import Settings
-from twin import DigitalTwin
+from app.domain.twin import DigitalTwin
 from middleware.limiter import allow
 from app.utils import process_logs_file
 
