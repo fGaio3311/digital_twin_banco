@@ -24,7 +24,7 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ["-f", "txt", "-o", "bandit_output.txt", "--quiet"]
+        args: ["-f", "txt", "--quiet"]
         stages: [manual]
 
   - repo: local
