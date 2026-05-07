@@ -147,8 +147,8 @@ class DigitalTwin:
             "eventos": u["eventos"],  # último N
         }
     def get_janela_de_logins(self):
-        l_t = self.users["eventos"]
-        return l_t
+        # Retorna os eventos do tipo 'login' em janela agregada (global)
+        return [ev for ev in self.eventos if ev.get("tipo") == "login"]
 
     def summary(self) -> Dict[str, Any]:
         return {
@@ -180,7 +180,8 @@ class DigitalTwin:
                 sums[t] += float(amt)
                 counts[t] += 1
 
-        avg = {k: (sums[k] / counts[k]) for k in sums}
+        # Evitar divisão por zero: somente calcula média quando houver contagem
+        avg = {k: (sums[k] / counts[k]) for k in sums if counts[k] > 0}
         return {
             "count_by_type": dict(tipos),
             "sum_by_type": dict(sums),

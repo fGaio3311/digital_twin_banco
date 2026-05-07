@@ -26,7 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.pool import StaticPool
 import jwt
 from jose import JWTError
-from paho.mqtt import client as mqtt_client
+from app.services.mqtt_service import mqtt_service
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -157,18 +157,8 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# ---------- MQTT publisher ----------
-try:
-    mqtt_client_global = mqtt_client.Client(
-        client_id="api-publisher",
-        protocol=mqtt_client.MQTTv311,
-    )
-    mqtt_client_global.connect(settings.mqtt_broker_host, settings.mqtt_broker_port)
-    mqtt_client_global.loop_start()
-except Exception as e:
-    print(f"[MQTT ERRO] Falha ao conectar: {e}")
-    mqtt_client_global = None
-
+# ---------- MQTT publisher (delegado para service) ----------
+# Usa o serviço isolado `app.services.mqtt_service.mqtt_service` para publicar
 def _collect_resources():
     proc = psutil.Process(os.getpid())
     while True:
@@ -178,6 +168,7 @@ def _collect_resources():
 
 threading.Thread(target=_collect_resources, daemon=True).start()
 
+
 def publish_balance_update(
     username: str,
     balance: float,
@@ -185,8 +176,6 @@ def publish_balance_update(
     amount: float,
     to_user: Optional[str] = None
 ):
-    if not mqtt_client_global:
-        return
     ev = {
         "timestamp": datetime.utcnow().isoformat(),
         "tipo": operation_type,
@@ -198,7 +187,13 @@ def publish_balance_update(
         },
         "descricao": f"{username} -> {operation_type} de {amount}, novo saldo={balance}",
     }
-    mqtt_client_global.publish("digital_twin/balance", json.dumps(ev), qos=1)
+    try:
+        # publica evento de operação e também atualiza tópico de balance quando aplicável
+        mqtt_service.publish_operation(ev)
+        mqtt_service.publish_balance(username, balance)
+    except Exception:
+        # Falha de publicação não deve quebrar fluxo da API
+        logging.exception("Falha ao publicar evento no MQTT via mqtt_service")
 
 # ---------- Banco de dados ----------
 engine_kwargs: dict[str, Any] = {}
