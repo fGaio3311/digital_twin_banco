@@ -34,7 +34,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.models.models import Base, User, Log, Transaction
 from app.settings import Settings
 from app.domain.twin import DigitalTwin
-from middleware.limiter import allow
+from app.middleware.limiter import allow
 from app.utils import process_logs_file
 
 # ---------- Métricas Prometheus ----------
