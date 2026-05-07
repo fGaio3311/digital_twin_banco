@@ -9,3 +9,5 @@ env/
 # Node
 node_modules/
 build/
+.next/
+frontend/node_modules/

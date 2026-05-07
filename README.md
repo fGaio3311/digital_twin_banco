@@ -1,6 +1,6 @@
 # Bank Simulator with Digital Twin – README
 
-> **Stack principal**: FastAPI · SQLAlchemy · PostgreSQL · MQTT (Eclipse Mosquitto) · Digital Twin (Python) · Typer CLI · Pytest
+> **Stack principal**: FastAPI · SQLAlchemy · PostgreSQL · MQTT (Eclipse Mosquitto) · Digital Twin (Python) · Next.js · Pytest
 
 ## 📑 Sumário
 
@@ -12,7 +12,8 @@
 
    * [Docker Compose](#docker-compose)
    * [Execução Local (sem Docker)](#execução-local-sem-docker)
-6. [CLI (Typer)](#cli-typer)
+6. [Frontend (Next.js)](#frontend-nextjs)
+7. [Segurança e Scans](#segurança-e-scans)
 7. [Endpoints Principais da API](#endpoints-principais-da-api)
 8. [Digital Twin – Funcionalidades](#digital-twin--funcionalidades)
 9. [Testes Automatizados](#testes-automatizados)
@@ -42,29 +43,22 @@ Frontend web **foi descontinuado** nesta entrega; o foco é em **API + CLI** e n
 ## Arquitetura
 
 ```
-+------------------------+
-|        CLI (Typer)     |
-|  -> chama API REST     |
-+-----------+------------+
-            |
-            v
 +------------------------+        +----------------------+
 |        FastAPI         |  --->  |  MQTT Broker (Mosq.) |
 |  Auth, Transações,     |        +----------+-----------+
 |  Logs, Endpoints Twin  |                   |
 +-----------+------------+                   v
-            |                           +----------+
-            v                           |Subscriber|
-+------------------------+              |(mqtt_sub)|
-| PostgreSQL (Transações)|              +----------+
+            |
+            v
++------------------------+
+| PostgreSQL (Transações)|
 +------------------------+
 ```
 
 * **FastAPI**: API REST com autenticação JWT.
 * **DigitalTwin**: classe Python que mantém sombra/estatísticas e pode exportar/importar eventos.
 * **MQTT**: eventos publicados no tópico `banco/<user>/events`.
-* **mqtt\_subscriber.py**: consome eventos e aplica no twin (quando executado como serviço).
-* **CLI (Typer)**: interface de linha de comando para registrar/logar/operar e consultar twin.
+* **CLI**: descontinuada nesta versão; a interface é via API.
 
 ---
 
@@ -157,6 +151,12 @@ REACT_APP_API_URL=http://localhost:8000
 
    ```bash
    curl http://localhost:8000/health
+
+4. **Frontend Next.js**
+
+   ```bash
+   open http://localhost:3000
+   ```
    ```
 
 ### Execução Local (sem Docker)
@@ -172,33 +172,39 @@ REACT_APP_API_URL=http://localhost:8000
 3. Execute API:
 
    ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-4. Execute o subscriber (opcional):
+   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   4. Execute o frontend:
+
+      ```bash
+      cd frontend
+      npm install
+      npm run dev
+      ```
+
+   ---
+
+   ## Frontend (Next.js)
+
+   O frontend Next.js fica em `frontend/` e consome a API via `NEXT_PUBLIC_API_URL`.
+
+   Exemplo:
 
    ```bash
-   python mqtt_subscriber.py
+   export NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
-
+   ```
 ---
 
-## CLI (Typer)
+## Segurança e Scans
 
-Arquivo: `cli.py`
+Substituto local ao Snyk: **Bandit** (manual).
 
-Instalação das dependências (se não estiver em Docker):
+### Como rodar
 
 ```bash
-pip install typer[all] requests
+pip install bandit
+./scripts/security_scan.sh
 ```
-
-Exemplos:
-
-```bash
-# Registrar e logar
-python cli.py register user pass
-python cli.py login --user user --pass pass
-
 # Operações bancárias
 python cli.py deposit 100
 python cli.py balance

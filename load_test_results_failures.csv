@@ -1,2 +1,0 @@
-Method,Name,Error,Occurrences
-POST,/pix,HTTPError('400 Client Error: Bad Request for url: /pix'),27
