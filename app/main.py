@@ -36,6 +36,7 @@ from app.settings import Settings
 from app.domain.twin import DigitalTwin
 from app.middleware.limiter import allow
 from app.utils import process_logs_file
+from app.schemas import Event
 
 # ---------- Métricas Prometheus ----------
 # Usar um registry separado para evitar duplicação
@@ -306,17 +307,24 @@ class DigitalTwinHandler(logging.Handler):
         if record.getMessage() == "anomaly":
             return
 
-        ev = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "tipo": record.getMessage(),
-            "info": {
-                "user": getattr(record, "user", None),
-                "amount": getattr(record, "amount", None),
-                "to_user": getattr(record, "to_user", None),
-                "balance": getattr(record, "balance", None),
-            },
-            "descricao": f"{getattr(record, 'user', '')} fez {record.getMessage()}"
-        }
+        # Build and validate event using Pydantic
+        try:
+            evt = Event(
+                timestamp=datetime.utcnow(),
+                tipo=record.getMessage(),
+                info={
+                    "user": getattr(record, "user", None),
+                    "amount": getattr(record, "amount", None),
+                    "to_user": getattr(record, "to_user", None),
+                    "balance": getattr(record, "balance", None),
+                },
+                descricao=f"{getattr(record, 'user', '')} fez {record.getMessage()}"
+            )
+        except Exception:
+            logging.exception("Invalid event from log record")
+            return
+
+        ev = evt.to_dict()
 
         start = time.monotonic()
         twin.apply_event(ev)
@@ -326,11 +334,16 @@ class DigitalTwinHandler(logging.Handler):
         PROCESS_LATENCY.observe(elapsed)
         MESSAGES_PROCESSED.inc()
 
-        if anoms and mqtt_client_global:
-            mqtt_client_global.publish("digital_twin/anomalies", json.dumps(anoms[-1]), qos=0)
+        if anoms:
+            try:
+                mqtt_service.publish_anomaly(anoms[-1])
+            except Exception:
+                logging.exception("Failed to publish anomaly")
 
-        if mqtt_client_global:
-            mqtt_client_global.publish("digital_twin/operation", json.dumps(ev), qos=1)
+        try:
+            mqtt_service.publish_operation(ev)
+        except Exception:
+            logging.exception("Failed to publish operation event")
 
 logger = logging.getLogger("myapp")
 logger.setLevel(logging.INFO)
@@ -389,8 +402,12 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 async def upload_logs(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
     events = process_logs_file(content)
-    for ev in events:
-        twin.apply_event(ev)
+    for raw in events:
+        try:
+            evt = Event.parse_obj(raw)
+            twin.apply_event(evt.to_dict())
+        except Exception:
+            logging.exception("Skipped invalid event during upload")
     return {"imported": len(events)}
 
 @app.post("/token", response_model=Token)
