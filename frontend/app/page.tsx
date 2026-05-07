@@ -67,17 +67,22 @@ export default async function Home() {
           <div className="card">
             <h3>Anomalias críticas</h3>
             <p>Alertas de risco classificados com severidade.</p>
-            <a href="/digital-twin/anomalies">Ver anomalias</a>
+            <a href="/anomalies">Ver anomalias</a>
           </div>
           <div className="card">
             <h3>Resumo operacional</h3>
             <p>Indicadores agregados por usuário e por tipo de evento.</p>
-            <a href="/digital-twin/summary">Abrir resumo</a>
+            <a href="/summary">Abrir resumo</a>
           </div>
           <div className="card">
             <h3>Telemetria</h3>
             <p>Observabilidade em tempo real do Digital Twin.</p>
             <a href="/metrics">Ver métricas</a>
+          </div>
+          <div className="card">
+            <h3>Visão geral</h3>
+            <p>Totais e contadores do gêmeo digital.</p>
+            <a href="/overview">Abrir visão geral</a>
           </div>
         </div>
       </section>

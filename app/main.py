@@ -752,11 +752,6 @@ def root():
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     return RedirectResponse(frontend_url)
 
-# Servir frontend estático (fallback) em /static
-from pathlib import Path
-frontend_path = Path(__file__).parent / "frontend" / "build"
-if frontend_path.exists():
-    app.mount("/static", StaticFiles(directory=str(frontend_path), html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
